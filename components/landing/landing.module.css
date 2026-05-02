@@ -1068,4 +1068,12 @@
   .showcaseGrid { grid-template-columns: 1fr; }
   .ctaActions   { flex-direction: column; align-items: center; }
   .heroCtas     { flex-direction: row; flex-wrap: wrap; }
+  .nav          { padding: 14px 16px; }
+  .navRight     { gap: 12px; }
+  .navLink      { display: none; }
+  .statsBar     { grid-template-columns: 1fr 1fr; }
+  .statItem     { padding: 20px 16px; border-right: none; border-bottom: 1px solid var(--border-1); }
+  .statItem:nth-child(odd) { border-right: 1px solid var(--border-1); }
+  .statItem:last-child,
+  .statItem:nth-last-child(2):nth-child(odd) { border-bottom: none; }
 }

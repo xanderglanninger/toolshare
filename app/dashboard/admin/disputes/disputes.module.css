@@ -406,3 +406,27 @@
   margin: 0.25rem 0 0;
   color: #388e3c;
 }
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .page { padding: 1rem 0.75rem; }
+
+  .header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+
+  .cardHeader { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .cardMeta { justify-content: flex-start; }
+  .listing { max-width: 100%; }
+
+  .parties { flex-direction: column; }
+  .partySep { display: none; }
+  .party { min-width: 0; }
+
+  .actions { flex-direction: column; }
+  .resolveForm { width: 100%; }
+
+  .formActions { flex-direction: column; }
+  .btnPrimary,
+  .btnSecondary,
+  .btnDanger { width: 100%; text-align: center; }
+}
