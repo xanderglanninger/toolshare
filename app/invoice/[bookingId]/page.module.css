@@ -1,0 +1,685 @@
+/* ─── Shell ───────────────────────────────────────────────────────────────── */
+
+.shell {
+  min-height: 100vh;
+  background: var(--bg-deep);
+  padding: 32px 20px 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ─── State (loading / error) ────────────────────────────────────────────── */
+
+.stateWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 14px;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 2.5px solid var(--border-2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stateIcon { font-size: 36px; margin: 0; }
+.stateText { font-size: 13px; color: var(--text-4); margin: 0; }
+
+.stateBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  padding: 0;
+}
+
+/* ─── Toolbar ────────────────────────────────────────────────────────────── */
+
+.toolbar {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.backBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  padding: 0;
+  transition: color 0.15s;
+}
+.backBtn:hover { color: var(--text-1); }
+
+.toolbarRight { display: flex; align-items: center; gap: 10px; }
+
+.toolbarNum {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-5);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.06em;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+.printBtn {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1c1a17;
+  background: var(--accent);
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s;
+  letter-spacing: 0.01em;
+}
+.printBtn:hover { background: #e69b00; }
+
+/* ─── Document ───────────────────────────────────────────────────────────── */
+
+.doc {
+  width: 100%;
+  max-width: 800px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 14px 14px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── Paid stamp ─────────────────────────────────────────────────────────── */
+
+.stamp {
+  position: absolute;
+  top: 52px;
+  right: 56px;
+  font-size: 30px;
+  font-weight: 900;
+  color: rgba(34, 197, 94, 0.45);
+  border: 3.5px solid rgba(34, 197, 94, 0.38);
+  border-radius: 5px;
+  padding: 5px 16px;
+  letter-spacing: 0.22em;
+  transform: rotate(-14deg);
+  pointer-events: none;
+  z-index: 2;
+  text-shadow: 0 0 0 transparent;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+
+.docHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 44px 52px 40px;
+  background: var(--bg-card);
+  position: relative;
+  z-index: 1;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.invoiceWord {
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  margin: 0;
+  line-height: 1;
+}
+
+.invoiceNum {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.headerMetaItem {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.headerMetaLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-5);
+}
+
+.headerMetaVal {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.headerMetaDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--border-3);
+  flex-shrink: 0;
+}
+
+.statusPaid {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.13);
+  color: #22c55e;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.statusUnpaid {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Brand (top right) */
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.brandMark { display: flex; align-items: stretch; }
+
+.brandBox {
+  background: var(--accent);
+  color: #1c1a17;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 5px 0 0 5px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.brandSuffix {
+  background: var(--bg-card-3);
+  color: var(--text-1);
+  font-size: 18px;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 0 5px 5px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.brandTagline {
+  font-size: 10px;
+  color: var(--text-5);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.brandId {
+  font-size: 9px;
+  color: var(--text-6);
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.03em;
+}
+
+/* ─── Parties band ───────────────────────────────────────────────────────── */
+
+.parties {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-card-2);
+  border-top: 1px solid var(--border-1);
+  border-bottom: 1px solid var(--border-1);
+  padding: 0 52px;
+}
+
+.party {
+  flex: 1;
+  padding: 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.partySeparator {
+  width: 1px;
+  background: var(--border-1);
+  margin: 18px 28px;
+  flex-shrink: 0;
+}
+
+.partyLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin: 0 0 5px;
+}
+
+.partyName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.partySub {
+  font-size: 11px;
+  color: var(--text-4);
+  margin: 0;
+}
+
+/* ─── Line items ─────────────────────────────────────────────────────────── */
+
+.tableWrap {
+  padding: 0 52px;
+  margin-top: 32px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.th {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-4);
+  background: var(--bg-card-2);
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.thDesc { text-align: left; }
+.thQty  { text-align: center; width: 64px; }
+.thRate { text-align: right;  width: 170px; }
+.thAmt  { text-align: right;  width: 150px; }
+
+.tr { transition: background 0.1s; }
+.tr:hover { background: var(--bg-hover); }
+.tr + .tr .td { border-top: 1px solid var(--border-1); }
+
+.td {
+  padding: 18px 16px;
+  vertical-align: top;
+}
+
+.tdDesc {}
+.tdQty  { text-align: center; }
+.tdRate { text-align: right;  white-space: nowrap; }
+.tdAmt  { text-align: right;  white-space: nowrap; }
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0 0 5px;
+}
+
+.itemSub {
+  font-size: 11px;
+  color: var(--text-4);
+  margin: 2px 0 0;
+  line-height: 1.4;
+}
+
+.tdQty  { font-size: 14px; font-weight: 600; color: var(--text-2); }
+.tdRate { font-size: 12px; color: var(--text-3); }
+.tdAmt  { font-size: 15px; font-weight: 700; color: var(--text-1); }
+
+/* ─── Totals ─────────────────────────────────────────────────────────────── */
+
+.totalsWrap {
+  padding: 20px 52px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+
+.subtotals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 280px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-1);
+  margin-bottom: 0;
+}
+
+.subtotalRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.subtotalLabel {
+  font-size: 12px;
+  color: var(--text-4);
+}
+
+.subtotalVal {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+/* Grand total: full-width amber band */
+.grandBand {
+  width: calc(100% + 104px); /* bleed past .totalsWrap padding */
+  margin-left: -52px;
+  margin-right: -52px;
+  margin-top: 16px;
+  padding: 18px 52px;
+  background: var(--accent-soft);
+  border-top: 1px solid rgba(245, 168, 0, 0.2);
+  border-bottom: 1px solid rgba(245, 168, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grandLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.grandValue {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+/* ─── Payment block ──────────────────────────────────────────────────────── */
+
+.payBlock {
+  margin: 24px 52px;
+  border-radius: 10px;
+  padding: 18px 22px;
+  border: 1px solid;
+}
+
+.payBlockPaid {
+  background: rgba(34, 197, 94, 0.05);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.payBlockUnpaid {
+  background: var(--accent-soft);
+  border-color: rgba(245, 168, 0, 0.2);
+}
+
+.payRow {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.payCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.payTick {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.18);
+  color: #22c55e;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.payConfirmedLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #22c55e;
+  white-space: nowrap;
+}
+
+.payFields {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.payField {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payFieldKey {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(34, 197, 94, 0.6);
+}
+
+.payFieldVal {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.03em;
+}
+
+.payPending {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+
+.docFooter {
+  padding: 0 52px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footerThanks {
+  font-size: 12px;
+  color: var(--text-4);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.footerRule {
+  height: 1px;
+  background: var(--border-1);
+}
+
+.footerBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.footerBrand {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-5);
+  letter-spacing: 0.04em;
+}
+
+.footerNote {
+  font-size: 10px;
+  color: var(--text-6);
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 680px) {
+  .shell { padding: 16px 0 48px; }
+
+  .toolbar { padding: 0 12px; }
+
+  .doc { border-radius: 0; border-left-width: 4px; }
+
+  .docHeader { flex-direction: column; gap: 20px; padding: 28px 24px 24px; }
+  .brand { align-items: flex-start; }
+
+  .invoiceWord { font-size: 30px; }
+  .stamp { top: 28px; right: 24px; font-size: 20px; }
+
+  .parties { padding: 0 24px; flex-direction: column; }
+  .partySeparator { width: 100%; height: 1px; margin: 0; }
+  .party { padding: 16px 0; }
+
+  .tableWrap { padding: 0 24px; }
+
+  .thRate, .tdRate { display: none; }
+
+  .totalsWrap { padding: 16px 24px 0; }
+  .grandBand { width: calc(100% + 48px); margin-left: -24px; margin-right: -24px; padding: 16px 24px; }
+  .grandValue { font-size: 22px; }
+
+  .payBlock { margin: 20px 24px; }
+  .payRow { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .payFields { gap: 16px; }
+
+  .docFooter { padding: 0 24px 28px; }
+  .footerBottom { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .footerNote { text-align: left; }
+}
+
+/* ─── Print ──────────────────────────────────────────────────────────────── */
+
+@media print {
+  .toolbar { display: none !important; }
+
+  .shell {
+    background: #fff !important;
+    padding: 0 !important;
+    min-height: unset;
+  }
+
+  .doc {
+    border: none !important;
+    border-left: 4px solid #c87800 !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .docHeader { background: #fff !important; padding: 32px 40px 28px !important; }
+  .parties   { padding: 0 40px !important; background: #f5f5f5 !important; border-color: #ddd !important; }
+  .tableWrap { padding: 0 40px !important; }
+  .totalsWrap { padding: 16px 40px 0 !important; }
+  .grandBand  { margin-left: -40px !important; margin-right: -40px !important; padding: 16px 40px !important; }
+  .payBlock   { margin: 20px 40px !important; }
+  .docFooter  { padding: 0 40px 32px !important; }
+
+  /* Light-mode overrides */
+  .doc, .doc * {
+    --bg-card:   #fff;
+    --bg-card-2: #f5f5f5;
+    --bg-card-3: #ebebeb;
+    --bg-hover:  #f0f0f0;
+    --border-1:  #ddd;
+    --border-2:  #ccc;
+    --border-3:  #bbb;
+    --text-1:    #111;
+    --text-2:    #333;
+    --text-3:    #555;
+    --text-4:    #777;
+    --text-5:    #999;
+    --text-6:    #bbb;
+    --accent:              #c87800;
+    --accent-soft:         rgba(200,120,0,0.08);
+  }
+
+  .invoiceWord  { color: #c87800 !important; }
+  .partyLabel   { color: #c87800 !important; }
+  .grandLabel, .grandValue { color: #c87800 !important; }
+  .grandBand    { background: rgba(200,120,0,0.07) !important; border-color: rgba(200,120,0,0.18) !important; }
+
+  .brandBox     { background: #c87800 !important; color: #fff !important; }
+  .brandSuffix  { background: #ebebeb !important; color: #111 !important; }
+
+  .statusPaid   { background: rgba(0,130,50,0.1) !important; color: #07703a !important; }
+  .statusUnpaid { background: rgba(200,120,0,0.1) !important; color: #a06000 !important; }
+
+  .stamp        { color: rgba(0,130,50,0.38) !important; border-color: rgba(0,130,50,0.32) !important; }
+
+  .payBlockPaid { background: rgba(0,130,50,0.04) !important; border-color: rgba(0,130,50,0.2) !important; }
+  .payTick      { background: rgba(0,130,50,0.12) !important; color: #07703a !important; }
+  .payConfirmedLabel { color: #07703a !important; }
+  .payFieldKey       { color: rgba(0,100,40,0.55) !important; }
+
+  .doc::before { display: none !important; }
+
+  @page { margin: 0.6in; size: A4; }
+}

@@ -1,0 +1,72 @@
+.wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  height: 260px;
+  background: #1c1a17;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #1c1a17 0%, #222018 100%);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+.errorState {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #7a7060;
+}
+
+.badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: #141210cc;
+  backdrop-filter: blur(8px);
+  border: 1px solid #2e2b24;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f5f0e8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 500;
+}
+
+.badge svg {
+  color: #f5a800;
+  flex-shrink: 0;
+}
+
+.disclaimer {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  color: #7a7060;
+  z-index: 500;
+  pointer-events: none;
+}

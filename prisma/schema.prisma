@@ -1,0 +1,419 @@
+// prisma/schema.prisma
+// Add the Listing model and Category enum below your existing models.
+// Your existing User, Equipment, Booking, Message models stay untouched.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Existing models (keep as-is) ─────────────────────────────────────────
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  surname   String?
+  email     String    @unique
+  emailVerified DateTime?
+  idNumber  String?   @unique
+  password  String?
+  image     String?
+  role                 String    @default("USER")
+  accounts             Account[]
+  listings             Listing[]
+  borrowedBookings     Booking[] @relation("borrowedBookings")
+  stripeAccountId      String?
+  stripeAccountEnabled Boolean   @default(false)
+  threadParticipations MessageThreadParticipant[]
+  sentMessages         Message[]                  @relation("SentMessages")
+  reportsMade          Report[]                   @relation("ReportsMade")
+  reportsReceived      Report[]                   @relation("ReportsReceived")
+  reviewsGiven         Review[]                   @relation("ReviewsGiven")
+  reviewsReceived      Review[]                   @relation("ReviewsReceived")
+  notifications        Notification[]
+  disputeEvidence      DisputeEvidence[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── New: Listings ─────────────────────────────────────────────────────────
+
+enum ListingCategory {
+  ELECTRONICS
+  TOOLS_EQUIPMENT
+  SPORTS_OUTDOORS
+  VEHICLES
+  CLOTHING_ACCESSORIES
+  FURNITURE_HOME
+  MUSICAL_INSTRUMENTS
+  BOOKS_MEDIA
+  GAMES_TOYS
+  CAMERAS_PHOTOGRAPHY
+  PARTY_EVENTS
+  OTHER
+}
+
+model Listing {
+  id               String          @id @default(cuid())
+
+  // Core
+  title            String
+  description      String
+  category         ListingCategory
+  images           String[]        // Array of image URLs
+
+  // Pricing (stored in ZAR)
+  pricePerDay      Float
+  pricePerWeek     Float?
+  pricePerMonth    Float?
+  depositAmount    Float?
+
+  // Availability
+  isAvailable      Boolean         @default(true)
+  availableFrom    DateTime?
+  availableTo      DateTime?
+
+  // Location
+  address          String
+  city             String
+  province         String
+  postalCode       String?
+  latitude         Float?
+  longitude        Float?
+
+  // Delivery
+  deliveryAvailable Boolean        @default(false)
+  deliveryRadius    Float?         // km
+  deliveryFee       Float?
+
+  // Relations
+  ownerId          String
+  owner            User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings         Booking[]
+  reviews          Review[]
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([ownerId])
+  @@index([category])
+  @@index([city])
+  @@index([isAvailable])
+}
+
+// ─── Bookings ──────────────────────────────────────────────────────────────
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum CancellationTier {
+  FULL_REFUND
+  HALF_REFUND
+  NO_REFUND
+  OWNER_CANCEL
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  listingId     String
+  listing       Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  borrowerId    String
+  borrower      User          @relation("borrowedBookings", fields: [borrowerId], references: [id], onDelete: Cascade)
+  startDate     DateTime
+  endDate       DateTime
+  totalAmount   Float
+  depositAmount Float?
+  status        BookingStatus @default(PENDING)
+  notes         String?
+
+  // Dual-confirmation for completion
+  borrowerConfirmed    Boolean           @default(false)
+  ownerConfirmed       Boolean           @default(false)
+  borrowerConfirmedAt  DateTime?
+  ownerConfirmedAt     DateTime?
+
+  // Cancellation tracking
+  cancellationTier     CancellationTier?
+  cancelledById        String?
+  cancelledAt          DateTime?
+
+  // Escrow scheduling
+  escrowReleaseAt      DateTime?
+
+  payment       Payment?
+  thread        MessageThread?
+  reports       Report[]
+  reviews       Review[]
+  escrowJob     EscrowReleaseJob?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([listingId])
+  @@index([borrowerId])
+}
+
+// ─── Payments ──────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASING
+  RELEASED
+  REFUNDED
+  PARTIAL
+  DISPUTED
+}
+
+enum DepositStatus {
+  HELD
+  RETURNED
+  KEPT
+  WAIVED
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  bookingId             String        @unique
+  booking               Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount                Float
+  currency              String        @default("ZAR")
+  status                PaymentStatus @default(PENDING)
+  paymentReference      String?
+  stripePaymentIntentId String?       @unique
+  paidAt                DateTime?
+
+  // Escrow
+  escrowStatus          EscrowStatus  @default(HELD)
+  releaseAfter          DateTime?
+  releasedAt            DateTime?
+  stripeTransferId      String?
+
+  // Deposit
+  depositStatus         DepositStatus @default(WAIVED)
+  depositPaymentIntentId String?      @unique
+  depositReleasedAt     DateTime?
+  depositTransferId     String?
+
+  // Refund tracking
+  refundedAmount        Float?
+  stripeRefundId        String?
+
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+// Tracks scheduled escrow auto-releases for background processing
+model EscrowReleaseJob {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  scheduledAt DateTime
+  processedAt DateTime?
+  status      String    @default("PENDING")
+  error       String?
+  createdAt   DateTime  @default(now())
+}
+
+// ─── Messaging ──────────────────────────────────────────────────────────────
+
+model MessageThread {
+  id            String                     @id @default(cuid())
+  participants  MessageThreadParticipant[]
+  bookingId     String?                    @unique
+  booking       Booking?                   @relation(fields: [bookingId], references: [id])
+  subject       String?
+  messages      Message[]
+  lastMessageAt DateTime?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+}
+
+model MessageThreadParticipant {
+  threadId String
+  userId   String
+  thread   MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String        @id @default(cuid())
+  threadId  String
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User          @relation("SentMessages", fields: [senderId], references: [id])
+  body      String
+  readAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([threadId])
+}
+
+// ─── Reports ────────────────────────────────────────────────────────────────
+
+enum ReportReason {
+  NO_SHOW
+  DAMAGED_EQUIPMENT
+  FRAUDULENT_LISTING
+  INAPPROPRIATE_BEHAVIOR
+  PAYMENT_DISPUTE
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+enum DisputeType {
+  RENTAL_AMOUNT
+  DEPOSIT
+  BOTH
+}
+
+enum AdminDecision {
+  FULL_REFUND_BORROWER
+  PARTIAL_REFUND_BORROWER
+  NO_REFUND_KEEP_WITH_OWNER
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reporterId String
+  reporter   User         @relation("ReportsMade",     fields: [reporterId], references: [id])
+  reportedId String
+  reported   User         @relation("ReportsReceived", fields: [reportedId], references: [id])
+  bookingId  String?
+  booking    Booking?     @relation(fields: [bookingId], references: [id])
+  reason     ReportReason
+  details    String?
+  status     ReportStatus @default(PENDING)
+
+  // Dispute resolution
+  disputeType   DisputeType?
+  escrowFrozen  Boolean       @default(false)
+  adminDecision AdminDecision?
+  adminNotes    String?
+  adminId       String?
+  resolvedAt    DateTime?
+  refundPercent Int?
+
+  evidence   DisputeEvidence[]
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([reporterId])
+  @@index([reportedId])
+}
+
+model DisputeEvidence {
+  id          String   @id @default(cuid())
+  reportId    String
+  report      Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  uploaderId  String
+  uploader    User     @relation(fields: [uploaderId], references: [id])
+  fileUrl     String
+  fileType    String
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([reportId])
+}
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  reviewer    User     @relation("ReviewsGiven",    fields: [reviewerId], references: [id])
+  reviewedId  String
+  reviewed    User     @relation("ReviewsReceived", fields: [reviewedId], references: [id])
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@unique([bookingId, reviewerId])
+  @@index([reviewedId])
+  @@index([listingId])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_COMPLETED
+  NEW_MESSAGE
+  NEW_REVIEW
+  PAYMENT_RECEIVED
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  DEPOSIT_RETURNED
+  FUNDS_RELEASED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  tab       String?
+  linkData  String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+}

@@ -1,0 +1,64 @@
+"use client";
+
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+
+type DashboardCtx = {
+  userImage: string | null;
+  setUserImage: (url: string) => void;
+  theme: "dark" | "light";
+  toggleTheme: () => void;
+  notifUnread: number;
+  setNotifUnread: (n: number) => void;
+};
+
+const DashboardContext = createContext<DashboardCtx>({} as DashboardCtx);
+export const useDashboard = () => useContext(DashboardContext);
+
+export function DashboardProvider({ children }: { children: ReactNode }) {
+  const [userImage, setUserImage] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [notifUnread, setNotifUnread] = useState(0);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("lendme-theme") as "dark" | "light" | null;
+      if (stored) setTheme(stored);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((j) => { if (j.data?.image) setUserImage(j.data.image); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function fetchUnread() {
+      fetch("/api/notifications")
+        .then((r) => r.json())
+        .then((j) => { if (j.data?.unreadCount !== undefined) setNotifUnread(j.data.unreadCount); })
+        .catch(() => {});
+    }
+    fetchUnread();
+    const id = setInterval(fetchUnread, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    if (next === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+    try { localStorage.setItem("lendme-theme", next); } catch {}
+  }
+
+  return (
+    <DashboardContext.Provider value={{ userImage, setUserImage, theme, toggleTheme, notifUnread, setNotifUnread }}>
+      {children}
+    </DashboardContext.Provider>
+  );
+}

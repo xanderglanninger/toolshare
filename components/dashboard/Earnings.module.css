@@ -1,0 +1,199 @@
+.page { padding: 36px 32px; }
+
+.pageHead { margin-bottom: 28px; }
+
+.eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 4px;
+}
+
+.pageTitle {
+  font-size: 28px; font-weight: 700; color: var(--text-1);
+  letter-spacing: -0.03em; line-height: 1;
+}
+
+/* ─── Hero ── */
+.hero {
+  background: var(--bg-card); border: 1px solid var(--border-1);
+  border-radius: 8px; padding: 28px 32px;
+  margin-bottom: 16px;
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 32px;
+  position: relative; overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: repeating-linear-gradient(-45deg, var(--accent) 0px, var(--accent) 10px, var(--bg-card) 10px, var(--bg-card) 20px);
+}
+
+.heroLabel {
+  font-size: 10px; font-weight: 600; color: var(--text-4);
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px;
+}
+
+.heroAmount {
+  font-size: 44px; font-weight: 700; color: var(--text-1);
+  letter-spacing: -0.03em; margin-bottom: 6px;
+}
+
+.heroUp   { font-size: 13px; color: #22c55e; font-weight: 500; }
+.heroDown { font-size: 13px; color: #f43f5e; font-weight: 500; }
+.heroNeutral { font-size: 13px; color: var(--text-4); font-weight: 500; }
+
+.heroStats {
+  display: flex; align-items: center; gap: 24px;
+  flex-shrink: 0;
+}
+
+.heroStat { text-align: center; }
+
+.heroStatVal {
+  font-size: 22px; font-weight: 700; color: var(--text-1);
+  letter-spacing: -0.02em; margin-bottom: 4px;
+}
+
+.heroStatLabel { font-size: 10px; color: var(--text-4); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.heroStatDivider { width: 1px; height: 40px; background: var(--border-1); }
+
+/* ─── Two col ── */
+.twoCol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.panel {
+  background: var(--bg-card); border: 1px solid var(--border-1);
+  border-radius: 8px; padding: 20px 24px;
+}
+
+.panelTitle {
+  font-size: 11px; font-weight: 600; color: var(--text-3);
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 20px;
+}
+
+/* ─── Bar chart ── */
+.chart {
+  display: flex; align-items: flex-end; gap: 10px;
+  height: 160px; padding-top: 24px;
+}
+
+.barCol {
+  flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%;
+}
+
+.barAmt { font-size: 9px; color: var(--text-4); margin-bottom: 6px; white-space: nowrap; }
+
+.barWrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+
+.barFill {
+  width: 100%; background: var(--border-1);
+  border-radius: 3px 3px 0 0; min-height: 4px;
+  transition: height 0.3s ease;
+}
+
+.barFillActive { background: var(--accent) !important; }
+
+.barMonth { font-size: 10px; color: var(--text-4); margin-top: 8px; font-weight: 600; }
+
+/* ─── Breakdown ── */
+.breakdown { display: flex; flex-direction: column; gap: 0; }
+
+.breakdownRow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border-1);
+}
+.breakdownRow:last-child { border-bottom: none; }
+
+.breakdownIcon { font-size: 20px; flex-shrink: 0; color: inherit; }
+
+.breakdownInfo { width: 150px; flex-shrink: 0; }
+
+.breakdownName { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.breakdownSub  { font-size: 11px; color: var(--text-4); }
+
+.breakdownBarWrap {
+  flex: 1; height: 6px; background: var(--border-1);
+  border-radius: 3px; overflow: hidden;
+}
+
+.breakdownBarFill {
+  height: 100%; background: var(--accent);
+  border-radius: 3px; opacity: 0.7;
+}
+
+.breakdownAmt {
+  font-size: 13px; font-weight: 700; color: var(--text-1);
+  width: 90px; text-align: right; flex-shrink: 0;
+}
+
+/* ─── Skeletons ── */
+.skeletonHero {
+  height: 52px; width: 200px; border-radius: 6px;
+  background: var(--border-1); animation: pulse 1.4s ease-in-out infinite;
+  margin-bottom: 6px;
+}
+.skeletonStat {
+  height: 28px; width: 80px; border-radius: 4px;
+  background: var(--border-1); animation: pulse 1.4s ease-in-out infinite;
+  margin: 0 auto 4px;
+}
+.skeleton {
+  flex: 1; border-radius: 3px;
+  background: var(--border-1); animation: pulse 1.4s ease-in-out infinite;
+  align-self: flex-end; min-height: 30%;
+}
+.skeletonRow {
+  height: 52px; border-radius: 6px;
+  background: var(--border-1); animation: pulse 1.4s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+.chartSkeleton {
+  display: flex; align-items: flex-end; gap: 10px;
+  height: 160px; padding-top: 24px;
+}
+.breakdownSkeleton { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ─── Empty state ── */
+.empty {
+  padding: 32px 0; text-align: center;
+  font-size: 13px; color: var(--text-4); line-height: 1.6;
+}
+
+/* ─── Error ── */
+.errorMsg {
+  background: #3b1a1a; border: 1px solid #7f1d1d; border-radius: 6px;
+  padding: 10px 16px; font-size: 13px; color: #fca5a5;
+  margin-bottom: 16px;
+}
+
+/* ─── Lifetime row ── */
+.lifetimeRow {
+  margin-top: 12px; padding: 14px 20px;
+  background: var(--bg-card); border: 1px solid var(--border-1);
+  border-radius: 8px; display: flex; justify-content: space-between;
+  align-items: center;
+}
+.lifetimeLabel { font-size: 12px; color: var(--text-4); text-transform: uppercase; letter-spacing: 0.08em; }
+.lifetimeVal   { font-size: 16px; font-weight: 700; color: var(--text-1); }
+
+@media (max-width: 1100px) {
+  .twoCol { grid-template-columns: 1fr; }
+  .hero   { flex-direction: column; align-items: flex-start; gap: 20px; }
+}
+
+@media (max-width: 768px) {
+  .page { padding: 24px 16px; }
+  .heroAmount { font-size: 32px; }
+  .heroStats  { gap: 16px; }
+}
+
+/* ── Light mode overrides ─────────────────────────── */
+[data-theme="light"] .errorMsg {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
