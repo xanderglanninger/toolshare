@@ -6,7 +6,7 @@ import { db } from "@/lib/db/client";
 // Only available outside production. Simulates a successful Stripe payment
 // so the full booking→payment→confirmation flow can be tested without real cards.
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE !== "true") {
     return NextResponse.json({ error: "Not available in production" }, { status: 403 });
   }
 
