@@ -308,8 +308,8 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
             const canHandOver      = b.status === "CONFIRMED" && isLent && isPaid && !b.listerHandoverSigned;
             // Borrower goes to receipt contract page after owner has signed
             const canConfirmReceipt = b.status === "CONFIRMED" && !isLent && b.listerHandoverSigned && !b.borrowerReceiptSigned;
-            // Both parties confirm return once the item is back
-            const canConfirmReturn = b.status === "ACTIVE";
+            // Both parties confirm return once the item is back (owner uses cancel-return flow instead when requested)
+            const canConfirmReturn = b.status === "ACTIVE" && !(isLent && b.cancelReturnRequested);
             // Borrower requests cancel while active (navigates to cancel-return page)
             const canRequestCancelReturn = b.status === "ACTIVE" && !isLent && !b.cancelReturnRequested;
             // Owner sees cancel-return confirmation prompt
