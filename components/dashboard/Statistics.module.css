@@ -327,17 +327,41 @@
   .earningsHero { flex-direction: column; align-items: flex-start; gap: 20px; }
 }
 @media (max-width: 768px) {
-  .page        { padding: 24px 16px; gap: 16px; }
-  .hero        { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .page        { padding: 20px 14px; gap: 14px; }
+  .hero        { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px 20px; }
+  .heroTitle   { font-size: 22px; }
   .statsGrid   { grid-template-columns: repeat(2, 1fr); }
   .chartsSide  { grid-template-columns: 1fr; }
   .donutWrap   { flex-direction: column; align-items: flex-start; }
   .earningsAmount { font-size: 32px; }
-  .earningsStats  { gap: 16px; }
+  .earningsHero   { padding: 20px; gap: 20px; }
+  .earningsStats  { gap: 12px; flex-wrap: wrap; }
+  .earningStatVal { font-size: 18px; }
+  .breakdownInfo  { width: 110px; }
+  .breakdownAmt   { width: 72px; font-size: 12px; }
+  .twoCol         { gap: 12px; }
 }
 @media (max-width: 480px) {
-  .statsGrid { grid-template-columns: 1fr; }
-  .hero      { padding: 20px; }
+  .page        { padding: 14px 10px; gap: 12px; }
+  .hero        { padding: 16px; gap: 12px; }
+  .heroTitle   { font-size: 20px; }
+  .heroSub     { font-size: 12px; }
+  .statsGrid   { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .statCard    { padding: 14px 14px 12px; }
+  .statValue   { font-size: 22px; }
+  .earningsAmount { font-size: 26px; }
+  .earningsHero   { padding: 16px; }
+  .earningsStats  { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .earningStatDivider { width: 100%; height: 1px; }
+  .earningStatVal { font-size: 16px; }
+  .panel       { padding: 14px 14px; }
+  .breakdownRow   { flex-wrap: wrap; gap: 6px; }
+  .breakdownInfo  { width: 100%; }
+  .breakdownBarWrap { width: 100%; }
+  .breakdownAmt   { width: auto; text-align: left; }
+  .barChart    { gap: 6px; }
+  .barAmt      { font-size: 8px; }
+  .barMonth    { font-size: 9px; }
 }
 
 /* ─── Light mode overrides ───────────────────────────────────────────────── */

@@ -225,9 +225,13 @@
 }
 
 /* ─── Mobile ──────────────────────────────────────── */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .panel {
-    width: calc(100vw - 32px);
-    right: -8px;
+    position: fixed;
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100dvh - 80px);
   }
 }
