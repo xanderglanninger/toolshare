@@ -119,7 +119,6 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
   const [cancellingId, setCancellingId]         = useState<string | null>(null);
   const [confirmId, setConfirmId]               = useState<string | null>(null);
   const [confirmingReturnId, setConfirmingReturnId] = useState<string | null>(null);
-  const [markingActiveId, setMarkingActiveId]   = useState<string | null>(null);
   const [openingMsg, setOpeningMsg]             = useState<string | null>(null);
   const [reviewBooking, setReviewBooking]       = useState<BookingWithDetails | null>(null);
   const [cancelRefundInfo, setCancelRefundInfo] = useState<{ tier: string; refundAmount: number } | null>(null);
@@ -173,22 +172,6 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
     } finally {
       setCancellingId(null);
       setConfirmId(null);
-    }
-  }
-
-  async function markAsActive(id: string) {
-    setMarkingActiveId(id);
-    try {
-      await fetch(`/api/bookings/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "ACTIVE" }),
-      });
-      setBookings((prev) =>
-        prev.map((b) => b.id === id ? { ...b, status: "ACTIVE" as BookingStatus } : b),
-      );
-    } finally {
-      setMarkingActiveId(null);
     }
   }
 
@@ -320,11 +303,17 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
             const days         = daysBetween(b.startDate, b.endDate);
             const isPaid       = b.payment?.status === "SUCCEEDED";
             const needsPay     = b.status === "PENDING" && !isLent && !isPaid;
-            const canCancel    = b.status === "PENDING" || b.status === "CONFIRMED";
-            // Owner marks item as handed over to borrower
-            const canMarkActive    = b.status === "CONFIRMED" && isLent && isPaid;
+            const canCancel    = (b.status === "PENDING" || b.status === "CONFIRMED") && !b.listerHandoverSigned;
+            // Owner goes to handover contract page (replaces direct markAsActive)
+            const canHandOver      = b.status === "CONFIRMED" && isLent && isPaid && !b.listerHandoverSigned;
+            // Borrower goes to receipt contract page after owner has signed
+            const canConfirmReceipt = b.status === "CONFIRMED" && !isLent && b.listerHandoverSigned && !b.borrowerReceiptSigned;
             // Both parties confirm return once the item is back
             const canConfirmReturn = b.status === "ACTIVE";
+            // Borrower requests cancel while active (navigates to cancel-return page)
+            const canRequestCancelReturn = b.status === "ACTIVE" && !isLent && !b.cancelReturnRequested;
+            // Owner sees cancel-return confirmation prompt
+            const hasPendingCancelReturn = b.status === "ACTIVE" && isLent && b.cancelReturnRequested;
             const alreadyReviewed = session?.user?.id
               ? b.reviews.some((r) => r.reviewerId === session.user!.id)
               : false;
@@ -417,13 +406,20 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
                             Review
                           </button>
                         )}
-                        {canMarkActive && (
+                        {canHandOver && (
                           <button
                             className={styles.btnMsg}
-                            disabled={markingActiveId === b.id}
-                            onClick={() => markAsActive(b.id)}
+                            onClick={() => router.push(`/dashboard/bookings/${b.id}/handover-contract`)}
                           >
-                            {markingActiveId === b.id ? "…" : "Hand Over Item"}
+                            Hand Over Item
+                          </button>
+                        )}
+                        {canConfirmReceipt && (
+                          <button
+                            className={styles.btnPay}
+                            onClick={() => router.push(`/dashboard/bookings/${b.id}/receipt-contract`)}
+                          >
+                            Received Item
                           </button>
                         )}
                         {canConfirmReturn && (
@@ -433,6 +429,22 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
                             onClick={() => confirmReturn(b.id)}
                           >
                             {confirmingReturnId === b.id ? "…" : "Confirm Return"}
+                          </button>
+                        )}
+                        {canRequestCancelReturn && (
+                          <button
+                            className={styles.btnCancel}
+                            onClick={() => router.push(`/dashboard/bookings/${b.id}/cancel-return`)}
+                          >
+                            Cancel Booking
+                          </button>
+                        )}
+                        {hasPendingCancelReturn && (
+                          <button
+                            className={styles.btnPay}
+                            onClick={() => router.push(`/dashboard/bookings/${b.id}/cancel-return`)}
+                          >
+                            Confirm Return
                           </button>
                         )}
                         {canCancel && (

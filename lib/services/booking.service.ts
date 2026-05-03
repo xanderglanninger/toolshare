@@ -204,6 +204,139 @@ export async function confirmCompletion(
   return { bothConfirmed, escrowReleaseAt };
 }
 
+export async function signHandover(bookingId: string, userId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { listing: { select: { ownerId: true, title: true } } },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.listing.ownerId !== userId) throw new Error("Only the listing owner can sign the handover.");
+  if (booking.status !== "CONFIRMED") throw new Error("Booking must be CONFIRMED to sign handover.");
+  if (booking.listerHandoverSigned) throw new Error("Handover already signed.");
+
+  const updated = await db.booking.update({
+    where: { id: bookingId },
+    data: { listerHandoverSigned: true, listerHandoverSignedAt: new Date() },
+    include: bookingInclude,
+  });
+
+  await createNotification({
+    userId: booking.borrowerId,
+    type: "HANDOVER_SIGNED",
+    title: "Item ready for collection",
+    body: `The owner has signed the handover contract for "${booking.listing.title}". Please confirm receipt when you collect the item.`,
+    tab: "bookings",
+    linkData: bookingId,
+  });
+
+  return updated;
+}
+
+export async function signReceipt(bookingId: string, userId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { listing: { select: { ownerId: true, title: true } } },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.borrowerId !== userId) throw new Error("Only the borrower can sign the receipt.");
+  if (booking.status !== "CONFIRMED") throw new Error("Booking must be CONFIRMED to sign receipt.");
+  if (!booking.listerHandoverSigned) throw new Error("Owner must sign handover first.");
+  if (booking.borrowerReceiptSigned) throw new Error("Receipt already signed.");
+
+  const updated = await db.booking.update({
+    where: { id: bookingId },
+    data: {
+      borrowerReceiptSigned: true,
+      borrowerReceiptSignedAt: new Date(),
+      status: "ACTIVE",
+    },
+    include: bookingInclude,
+  });
+
+  await createNotification({
+    userId: booking.listing.ownerId,
+    type: "RECEIPT_SIGNED",
+    title: "Borrower confirmed receipt",
+    body: `The borrower has signed the receipt for "${booking.listing.title}". The booking is now active.`,
+    tab: "bookings",
+    linkData: bookingId,
+  });
+
+  return updated;
+}
+
+export async function requestCancelReturn(bookingId: string, userId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { listing: { select: { ownerId: true, title: true } } },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.borrowerId !== userId) throw new Error("Only the borrower can request a cancel-return.");
+  if (booking.status !== "ACTIVE") throw new Error("Booking must be ACTIVE.");
+  if (booking.cancelReturnRequested) throw new Error("Cancel-return already requested.");
+
+  await db.booking.update({
+    where: { id: bookingId },
+    data: { cancelReturnRequested: true, cancelReturnRequestedAt: new Date() },
+  });
+
+  await createNotification({
+    userId: booking.listing.ownerId,
+    type: "CANCEL_RETURN_REQUESTED",
+    title: "Borrower requesting cancellation",
+    body: `The borrower has indicated that they have returned "${booking.listing.title}" and is requesting to cancel the booking. Please sign off that you have received the item.`,
+    tab: "bookings",
+    linkData: bookingId,
+  });
+}
+
+export async function confirmReturnCancel(bookingId: string, userId: string, confirmed: boolean) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { listing: { select: { ownerId: true, title: true } } },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.listing.ownerId !== userId) throw new Error("Only the listing owner can confirm the return.");
+  if (booking.status !== "ACTIVE") throw new Error("Booking must be ACTIVE.");
+  if (!booking.cancelReturnRequested) throw new Error("No cancel-return has been requested.");
+
+  if (confirmed) {
+    await db.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: "CANCELLED",
+        cancelledById: userId,
+        cancelledAt: new Date(),
+        cancellationTier: "OWNER_CANCEL",
+      },
+    });
+
+    await createNotification({
+      userId: booking.borrowerId,
+      type: "BOOKING_CANCELLED",
+      title: "Booking cancelled",
+      body: `The owner confirmed receipt of "${booking.listing.title}". Your booking has been cancelled.`,
+      tab: "bookings",
+      linkData: bookingId,
+    });
+  } else {
+    // Lister denies — reset request so borrower can see the denial
+    await db.booking.update({
+      where: { id: bookingId },
+      data: { cancelReturnRequested: false, cancelReturnRequestedAt: null },
+    });
+
+    await createNotification({
+      userId: booking.borrowerId,
+      type: "CANCEL_RETURN_DENIED",
+      title: "Cancellation not confirmed",
+      body: `The owner has not confirmed receipt of "${booking.listing.title}". The booking remains active. Please contact the owner directly.`,
+      tab: "bookings",
+      linkData: bookingId,
+    });
+  }
+}
+
 export async function getBookedDateRanges(
   listingId: string
 ): Promise<{ startDate: Date; endDate: Date }[]> {

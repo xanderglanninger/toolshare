@@ -1,0 +1,305 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-base);
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-4);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  transition: color 0.15s;
+  align-self: flex-start;
+}
+.back:hover { color: var(--text-2); }
+
+.header {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: 16px;
+  padding: 28px 32px;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent) 0%, transparent 60%);
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.bookingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.metaLabel {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-5);
+}
+.metaValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.contractCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.contractHeader {
+  background: var(--bg-card-2);
+  border-bottom: 1px solid var(--border-1);
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.contractHeaderTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.contractBody {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contractSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contractSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.contractText {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-3);
+}
+
+.contractDivider {
+  border: none;
+  border-top: 1px solid var(--border-1);
+  margin: 4px 0;
+}
+
+.signatureCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.signatureTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.checkRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.checkLabel {
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.signRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-1);
+  border-radius: 10px;
+}
+.signLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex: 1;
+}
+.signTimestamp {
+  font-size: 11px;
+  color: var(--text-5);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.btnSign {
+  padding: 14px 32px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: #1c1a17;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s, opacity 0.15s;
+  align-self: flex-start;
+}
+.btnSign:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btnSign:not(:disabled):hover { background: #e69b00; }
+
+.btnSecondary {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btnSecondary:hover { border-color: var(--border-3); color: var(--text-1); }
+
+.btnDanger {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.08);
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s;
+}
+.btnDanger:hover { background: rgba(239,68,68,0.16); }
+
+.btnRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.successBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 12px;
+  color: #22c55e;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.warningBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(245,168,0,0.08);
+  border: 1px solid rgba(245,168,0,0.25);
+  border-radius: 12px;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--text-4);
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .page { padding: 20px 12px; }
+  .header { padding: 20px 18px; }
+  .contractBody { padding: 20px 18px; }
+  .signatureCard { padding: 20px 18px; }
+  .contractHeader { padding: 14px 18px; }
+  .title { font-size: 18px; }
+}

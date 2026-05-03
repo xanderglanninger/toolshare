@@ -72,6 +72,12 @@ export interface BookingWithDetails extends Booking {
     paymentReference: string | null;
   } | null;
   reviews: { reviewerId: string }[];
+  listerHandoverSigned: boolean;
+  listerHandoverSignedAt: Date | null;
+  borrowerReceiptSigned: boolean;
+  borrowerReceiptSignedAt: Date | null;
+  cancelReturnRequested: boolean;
+  cancelReturnRequestedAt: Date | null;
 }
 
 // ─── Messaging ───────────────────────────────────────────────────────────────

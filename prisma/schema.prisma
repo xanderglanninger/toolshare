@@ -172,6 +172,16 @@ model Booking {
   cancelledById        String?
   cancelledAt          DateTime?
 
+  // Handover / receipt contract signatures
+  listerHandoverSigned    Boolean   @default(false)
+  listerHandoverSignedAt  DateTime?
+  borrowerReceiptSigned   Boolean   @default(false)
+  borrowerReceiptSignedAt DateTime?
+
+  // Borrower-initiated cancel-return flow
+  cancelReturnRequested   Boolean   @default(false)
+  cancelReturnRequestedAt DateTime?
+
   // Escrow scheduling
   escrowReleaseAt      DateTime?
 
@@ -401,6 +411,10 @@ enum NotificationType {
   DISPUTE_RESOLVED
   DEPOSIT_RETURNED
   FUNDS_RELEASED
+  HANDOVER_SIGNED
+  RECEIPT_SIGNED
+  CANCEL_RETURN_REQUESTED
+  CANCEL_RETURN_DENIED
 }
 
 model Notification {

@@ -548,32 +548,75 @@
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-  .page { padding: 24px 16px; }
+  .page { padding: 20px 12px; gap: 16px; }
 
-  .hero { padding: 22px 20px; }
+  .hero { padding: 18px 16px; gap: 16px; }
+
+  .heroLeft { gap: 12px; }
 
   .pageTitle { font-size: 22px; }
 
+  .stats { gap: 14px; }
+
+  .statValue { font-size: 15px; }
+
   .roleSwitch { width: 100%; }
-  .roleBtn { flex: 1; text-align: center; }
+  .roleBtn { flex: 1; text-align: center; padding: 8px 8px; font-size: 11px; }
 
-  .tabs { flex-wrap: nowrap; overflow-x: auto; }
-  .tab { flex-shrink: 0; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { flex-shrink: 0; padding: 10px 12px; }
 
-  .cardInner { gap: 12px; padding: 14px 14px; }
+  /* Card: stack info row then actions row */
+  .cardInner {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 12px;
+    align-items: flex-start;
+  }
 
-  .thumb { width: 56px; height: 56px; }
+  .thumb { width: 52px; height: 52px; flex-shrink: 0; }
 
+  .info { flex: 1; min-width: 0; }
+
+  .cardTitle { font-size: 14px; }
+
+  /* Right column drops below thumb+info as a full-width row */
   .cardRight {
     flex-direction: row;
     align-items: center;
     width: 100%;
     justify-content: space-between;
-    padding: 0 14px 14px;
+    padding: 0 0 4px 0;
     min-width: unset;
+    border-top: 1px solid var(--border-1);
+    padding-top: 10px;
   }
 
-  .card { flex-wrap: wrap; }
+  .cardAmount { font-size: 15px; }
 
-  .cardInner { width: 100%; }
+  .actions {
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-end;
+  }
+
+  .confirmBox { align-items: flex-end; }
+
+  .confirmBtns { flex-wrap: wrap; justify-content: flex-end; }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 16px 10px; }
+
+  .hero { padding: 14px 14px; }
+
+  .roleBtn { font-size: 10px; padding: 7px 6px; }
+
+  .cardInner { padding: 10px 10px; }
+
+  .cardRight { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  .actions { justify-content: flex-start; }
+
+  .confirmBox { align-items: flex-start; }
 }
