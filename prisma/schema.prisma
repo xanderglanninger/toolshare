@@ -178,6 +178,14 @@ model Booking {
   borrowerReceiptSigned   Boolean   @default(false)
   borrowerReceiptSignedAt DateTime?
 
+  // Wizard handover steps
+  listerInitiatedHandover    Boolean   @default(false)
+  listerInitiatedHandoverAt  DateTime?
+  borrowerIssuesSubmitted    Boolean   @default(false)
+  borrowerIssuesSubmittedAt  DateTime?
+  listerConfirmedIssues      Boolean   @default(false)
+  listerConfirmedIssuesAt    DateTime?
+
   // Borrower-initiated cancel-return flow
   cancelReturnRequested   Boolean   @default(false)
   cancelReturnRequestedAt DateTime?
@@ -190,11 +198,39 @@ model Booking {
   reports       Report[]
   reviews       Review[]
   escrowJob     EscrowReleaseJob?
+  issues        BookingIssue[]
+  rentalUpdates RentalUpdate[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   @@index([listingId])
   @@index([borrowerId])
+}
+
+// ─── Booking Issues ────────────────────────────────────────────────────────
+
+model BookingIssue {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  description String
+  photos      String[]
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+// ─── Rental Updates ────────────────────────────────────────────────────────
+
+model RentalUpdate {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  message     String
+  photos      String[]
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId])
 }
 
 // ─── Payments ──────────────────────────────────────────────────────────────
@@ -415,6 +451,8 @@ enum NotificationType {
   RECEIPT_SIGNED
   CANCEL_RETURN_REQUESTED
   CANCEL_RETURN_DENIED
+  ISSUES_LOGGED
+  RENTAL_UPDATE
 }
 
 model Notification {

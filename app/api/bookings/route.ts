@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
         : await getBookingsByBorrower(session.user.id);
 
     return NextResponse.json({ data: bookings });
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch bookings" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[GET /api/bookings]", err);
+    return NextResponse.json({ error: err?.message ?? "Failed to fetch bookings" }, { status: 500 });
   }
 }
 

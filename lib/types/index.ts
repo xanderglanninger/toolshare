@@ -72,12 +72,27 @@ export interface BookingWithDetails extends Booking {
     paymentReference: string | null;
   } | null;
   reviews: { reviewerId: string }[];
+  // Wizard handover steps
+  listerInitiatedHandover: boolean;
+  listerInitiatedHandoverAt: Date | null;
+  borrowerIssuesSubmitted: boolean;
+  borrowerIssuesSubmittedAt: Date | null;
+  listerConfirmedIssues: boolean;
+  listerConfirmedIssuesAt: Date | null;
   listerHandoverSigned: boolean;
   listerHandoverSignedAt: Date | null;
   borrowerReceiptSigned: boolean;
   borrowerReceiptSignedAt: Date | null;
+  // Completion
+  borrowerConfirmed: boolean;
+  borrowerConfirmedAt: Date | null;
+  ownerConfirmed: boolean;
+  ownerConfirmedAt: Date | null;
+  // Cancel-return flow
   cancelReturnRequested: boolean;
   cancelReturnRequestedAt: Date | null;
+  issues: BookingIssue[];
+  rentalUpdates: RentalUpdate[];
 }
 
 // ─── Messaging ───────────────────────────────────────────────────────────────
@@ -201,6 +216,26 @@ export interface ListingReviewSummary {
   averageRating: number;
   count: number;
   reviews: Review[];
+}
+
+// ─── Rental Updates ──────────────────────────────────────────────────────────
+
+export interface RentalUpdate {
+  id: string;
+  bookingId: string;
+  message: string;
+  photos: string[];
+  createdAt: Date;
+}
+
+// ─── Booking Issues ──────────────────────────────────────────────────────────
+
+export interface BookingIssue {
+  id: string;
+  bookingId: string;
+  description: string;
+  photos: string[];
+  createdAt: Date;
 }
 
 // ─── API responses ────────────────────────────────────────────────────────────

@@ -20,7 +20,12 @@ const bookingInclude = {
   borrower: { select: { id: true, name: true, surname: true, image: true } },
   payment:  { select: { status: true, paidAt: true, amount: true, paymentReference: true, escrowStatus: true, depositStatus: true } },
   reviews:  { select: { reviewerId: true } },
+  issues:         { select: { id: true, bookingId: true, description: true, photos: true, createdAt: true }, orderBy: { createdAt: "asc" as const } },
+  rentalUpdates:  { select: { id: true, bookingId: true, message: true, photos: true, createdAt: true }, orderBy: { createdAt: "asc" as const } },
 };
+
+// Scalar fields on Booking that need to be explicitly passed through (they are returned by default with include)
+// TypeScript cast via `as unknown as BookingWithDetails` handles this.
 
 export async function createBooking(data: {
   listingId:     string;
@@ -202,6 +207,104 @@ export async function confirmCompletion(
   }
 
   return { bothConfirmed, escrowReleaseAt };
+}
+
+export async function initiateHandover(bookingId: string, userId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { listing: { select: { ownerId: true, title: true } } },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.listing.ownerId !== userId) throw new Error("Only the listing owner can initiate handover.");
+  if (booking.status !== "CONFIRMED") throw new Error("Booking must be CONFIRMED.");
+  if (booking.listerInitiatedHandover) throw new Error("Handover already initiated.");
+
+  const updated = await db.booking.update({
+    where: { id: bookingId },
+    data: { listerInitiatedHandover: true, listerInitiatedHandoverAt: new Date() },
+    include: bookingInclude,
+  });
+
+  await createNotification({
+    userId: booking.borrowerId,
+    type: "HANDOVER_SIGNED",
+    title: "Owner is ready to hand over",
+    body: `The owner is ready to hand over "${booking.listing.title}". Please inspect the item and log any pre-existing issues.`,
+    tab: "bookings",
+    linkData: bookingId,
+  });
+
+  return updated;
+}
+
+export async function submitIssues(bookingId: string, userId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      listing: { select: { ownerId: true, title: true } },
+      issues: true,
+    },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.borrowerId !== userId) throw new Error("Only the borrower can submit the inspection.");
+  if (booking.status !== "CONFIRMED") throw new Error("Booking must be CONFIRMED.");
+  if (!booking.listerInitiatedHandover) throw new Error("Owner must initiate handover first.");
+  if (booking.borrowerIssuesSubmitted) throw new Error("Inspection already submitted.");
+
+  const hasIssues = booking.issues.length > 0;
+
+  const updated = await db.booking.update({
+    where: { id: bookingId },
+    data: {
+      borrowerIssuesSubmitted: true,
+      borrowerIssuesSubmittedAt: new Date(),
+      // Auto-confirm issues step if nothing to review
+      ...(!hasIssues ? { listerConfirmedIssues: true, listerConfirmedIssuesAt: new Date() } : {}),
+    },
+    include: bookingInclude,
+  });
+
+  await createNotification({
+    userId: booking.listing.ownerId,
+    type: "ISSUES_LOGGED",
+    title: hasIssues ? "Borrower logged issues — please review" : "Borrower confirmed no issues",
+    body: hasIssues
+      ? `The borrower has logged ${booking.issues.length} issue(s) for "${booking.listing.title}". Please review and confirm before signing.`
+      : `The borrower confirmed no pre-existing issues for "${booking.listing.title}". Please proceed to sign the agreement.`,
+    tab: "bookings",
+    linkData: bookingId,
+  });
+
+  return updated;
+}
+
+export async function confirmIssues(bookingId: string, userId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    include: { listing: { select: { ownerId: true, title: true } } },
+  });
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.listing.ownerId !== userId) throw new Error("Only the listing owner can confirm issues.");
+  if (booking.status !== "CONFIRMED") throw new Error("Booking must be CONFIRMED.");
+  if (!booking.borrowerIssuesSubmitted) throw new Error("Borrower must submit inspection first.");
+  if (booking.listerConfirmedIssues) throw new Error("Issues already confirmed.");
+
+  const updated = await db.booking.update({
+    where: { id: bookingId },
+    data: { listerConfirmedIssues: true, listerConfirmedIssuesAt: new Date() },
+    include: bookingInclude,
+  });
+
+  await createNotification({
+    userId: booking.borrowerId,
+    type: "HANDOVER_SIGNED",
+    title: "Owner reviewed your issues",
+    body: `The owner has reviewed and acknowledged the issues you logged for "${booking.listing.title}". Please proceed to sign the handover agreement.`,
+    tab: "bookings",
+    linkData: bookingId,
+  });
+
+  return updated;
 }
 
 export async function signHandover(bookingId: string, userId: string) {
