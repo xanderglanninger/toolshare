@@ -193,7 +193,7 @@ function LoginContent() {
           </div>
 
           <div className={styles.slideContent}>
-            <p className={styles.slideEyebrow}>LendMe — for the trades</p>
+            <p className={styles.slideEyebrow}>ToolShare — for the trades</p>
             <p className={styles.slideTitle}>{slides[activeSlide].title}</p>
             <p className={styles.slideSub}>{slides[activeSlide].subtitle}</p>
             <div className={styles.slideDots}>

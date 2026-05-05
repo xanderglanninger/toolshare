@@ -5,6 +5,10 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db/client";
 import { verifyCredentials } from "@/lib/services/auth.service";
 
+declare module "next-auth" {
+  interface Session { user: { id: string; name: string; email: string; image?: string | null; role: string } }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
   session: {
@@ -39,10 +43,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
+        const dbUser = await db.user.findUnique({ where: { id: result.user.id }, select: { role: true } });
         return {
           id: result.user.id,
           name: `${result.user.name} ${result.user.surname}`,
           email: result.user.email,
+          role: dbUser?.role ?? "USER",
         };
       },
     }),
@@ -50,13 +56,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id   = user.id;
+        token.role = (user as any).role ?? "USER";
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
+        session.user.id   = token.id as string;
+        session.user.role = (token.role as string) ?? "USER";
       }
       return session;
     },

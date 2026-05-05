@@ -7,6 +7,8 @@ export interface RegisterInput {
   email: string;
   idNumber: string;
   password: string;
+  selfieUrl: string;
+  idPhotoUrl: string;
 }
 
 export interface AuthResult {
@@ -50,6 +52,9 @@ export async function registerUser(input: RegisterInput): Promise<AuthResult> {
         email: input.email.toLowerCase(),
         idNumber: input.idNumber,
         password,
+        selfieUrl: input.selfieUrl,
+        idPhotoUrl: input.idPhotoUrl,
+        idVerificationStatus: "pending",
       },
     });
 

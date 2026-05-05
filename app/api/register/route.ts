@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerUser } from "@/lib/services/auth.service";
+import { validateSAId } from "@/lib/utils/sa-id";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, surname, email, idNumber, password } = body;
+    const { name, surname, email, idNumber, password, selfieUrl, idPhotoUrl } = body;
 
-    // Basic validation
     if (!name || !surname || !email || !idNumber || !password) {
       return NextResponse.json(
         { error: "All fields are required." },
         { status: 400 }
       );
     }
-
+    if (!selfieUrl || !idPhotoUrl) {
+      return NextResponse.json(
+        { error: "A selfie and a photo of your ID document are required." },
+        { status: 400 }
+      );
+    }
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Password must be at least 8 characters." },
@@ -21,14 +26,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (idNumber.length !== 13 || !/^\d+$/.test(idNumber)) {
-      return NextResponse.json(
-        { error: "ID number must be 13 digits." },
-        { status: 400 }
-      );
+    const idValidation = validateSAId(idNumber);
+    if (!idValidation.valid) {
+      return NextResponse.json({ error: idValidation.error }, { status: 400 });
     }
 
-    const result = await registerUser({ name, surname, email, idNumber, password });
+    const result = await registerUser({
+      name,
+      surname,
+      email,
+      idNumber,
+      password,
+      selfieUrl,
+      idPhotoUrl,
+    });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 409 });
