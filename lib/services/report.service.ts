@@ -45,6 +45,24 @@ export async function openDispute(input: {
     booking.listing.ownerId === input.reporterId;
   if (!isParty) throw new Error("You are not a party to this booking.");
 
+  // Rec #3: For DAMAGED_EQUIPMENT claims by the borrower, enforce a 4-hour window
+  // after receipt signing. After that window, pre-handover damage can't be attributed
+  // to the item's condition at receipt.
+  const DISPUTE_WINDOW_MS = 4 * 60 * 60 * 1000;
+  if (
+    input.reason === "DAMAGED_EQUIPMENT" &&
+    booking.borrowerId === input.reporterId &&
+    booking.borrowerReceiptSignedAt
+  ) {
+    const elapsed = Date.now() - new Date(booking.borrowerReceiptSignedAt).getTime();
+    if (elapsed > DISPUTE_WINDOW_MS) {
+      throw new Error(
+        "Damage disputes about the item's condition at handover must be raised within 4 hours of signing the receipt. " +
+        "You can still open a dispute for damage that occurred during the rental period."
+      );
+    }
+  }
+
   const report = await db.$transaction(async (tx) => {
     const created = await tx.report.create({
       data: {
@@ -97,6 +115,8 @@ export async function openDispute(input: {
   return report as unknown as Report;
 }
 
+const MAX_EVIDENCE_PER_REPORT = 10;
+
 export async function addDisputeEvidence(input: {
   reportId: string;
   uploaderId: string;
@@ -106,15 +126,28 @@ export async function addDisputeEvidence(input: {
 }) {
   const report = await db.report.findUnique({
     where: { id: input.reportId },
-    include: { booking: { select: { borrowerId: true, listing: { select: { ownerId: true } } } } },
+    include: {
+      booking: { select: { borrowerId: true, listing: { select: { ownerId: true } } } },
+      evidence: { select: { id: true } },
+    },
   });
   if (!report) throw new Error("Report not found.");
   if (!report.booking) throw new Error("Report is not linked to a booking.");
+
+  // Fix #6: Block evidence submission on resolved disputes
+  if (report.status === "RESOLVED") {
+    throw new Error("Cannot submit evidence after the dispute has been resolved.");
+  }
 
   const isParty =
     report.booking.borrowerId === input.uploaderId ||
     report.booking.listing.ownerId === input.uploaderId;
   if (!isParty) throw new Error("Only parties to the booking can submit evidence.");
+
+  // Fix #11: Cap evidence uploads per report
+  if ((report as any).evidence.length >= MAX_EVIDENCE_PER_REPORT) {
+    throw new Error(`Maximum of ${MAX_EVIDENCE_PER_REPORT} evidence files allowed per dispute.`);
+  }
 
   return db.disputeEvidence.create({
     data: {

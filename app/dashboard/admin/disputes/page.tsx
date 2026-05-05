@@ -134,9 +134,13 @@ export default function AdminDisputesPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Dispute Resolution</h1>
-        <span className={styles.count}>{disputes.length} open</span>
+      <div className={styles.pageHead}>
+        <p className={styles.eyebrow}>Admin</p>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Dispute Resolution</h1>
+          <span className={styles.count}>{disputes.length} open</span>
+        </div>
+        <p className={styles.sub}>Review and resolve open disputes between renters and lenders.</p>
       </div>
 
       {disputes.length === 0 && (
