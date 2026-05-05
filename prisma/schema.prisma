@@ -23,6 +23,9 @@ model User {
   password  String?
   image     String?
   role                 String    @default("USER")
+  selfieUrl            String?
+  idPhotoUrl           String?
+  idVerificationStatus String    @default("unverified")
   accounts             Account[]
   listings             Listing[]
   borrowedBookings     Booking[] @relation("borrowedBookings")
@@ -111,6 +114,14 @@ model Listing {
   latitude         Float?
   longitude        Float?
 
+  // Item details
+  quantity          Int             @default(1)
+  currentValue      Float?
+  itemInsured       Boolean         @default(false)
+  make              String?
+  model             String?
+  size              String?
+
   // Delivery
   deliveryAvailable Boolean        @default(false)
   deliveryRadius    Float?         // km
@@ -157,6 +168,7 @@ model Booking {
   startDate     DateTime
   endDate       DateTime
   totalAmount   Float
+  platformFee   Float?
   depositAmount Float?
   status        BookingStatus @default(PENDING)
   notes         String?
@@ -178,6 +190,10 @@ model Booking {
   borrowerReceiptSigned   Boolean   @default(false)
   borrowerReceiptSignedAt DateTime?
 
+  // Pickup arrangement (captured by owner when initiating handover)
+  pickupLocation     String?
+  agreedHandoverTime DateTime?
+
   // Wizard handover steps
   listerInitiatedHandover    Boolean   @default(false)
   listerInitiatedHandoverAt  DateTime?
@@ -190,6 +206,13 @@ model Booking {
   cancelReturnRequested   Boolean   @default(false)
   cancelReturnRequestedAt DateTime?
 
+  // Return inspection (lister inspects item on return)
+  listerReturnInspected        Boolean   @default(false)
+  listerReturnInspectedAt      DateTime?
+  listerReturnDamageClaimed    Boolean   @default(false)
+  borrowerAcknowledgedReturn   Boolean   @default(false)
+  borrowerAcknowledgedReturnAt DateTime?
+
   // Escrow scheduling
   escrowReleaseAt      DateTime?
 
@@ -199,6 +222,7 @@ model Booking {
   reviews       Review[]
   escrowJob     EscrowReleaseJob?
   issues        BookingIssue[]
+  returnIssues  ReturnIssue[]
   rentalUpdates RentalUpdate[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -210,6 +234,19 @@ model Booking {
 // ─── Booking Issues ────────────────────────────────────────────────────────
 
 model BookingIssue {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  description String
+  photos      String[]
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+// ─── Return Issues ─────────────────────────────────────────────────────────
+
+model ReturnIssue {
   id          String   @id @default(cuid())
   bookingId   String
   booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)

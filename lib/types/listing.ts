@@ -34,6 +34,12 @@ export type Listing = {
   postalCode:       string | null;
   latitude:         number | null;
   longitude:        number | null;
+  quantity:         number;
+  currentValue:     number | null;
+  itemInsured:      boolean;
+  make:             string | null;
+  model:            string | null;
+  size:             string | null;
   deliveryAvailable: boolean;
   deliveryRadius:   number | null;
   deliveryFee:      number | null;
@@ -62,6 +68,12 @@ export type CreateListingInput = {
   postalCode?:      string | null;
   latitude?:        number | null;
   longitude?:       number | null;
+  quantity?:        number;
+  currentValue?:    number | null;
+  itemInsured?:     boolean;
+  make?:            string | null;
+  model?:           string | null;
+  size?:            string | null;
   deliveryAvailable: boolean;
   deliveryRadius?:  number | null;
   deliveryFee?:     number | null;

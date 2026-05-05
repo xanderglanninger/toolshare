@@ -91,7 +91,17 @@ export interface BookingWithDetails extends Booking {
   // Cancel-return flow
   cancelReturnRequested: boolean;
   cancelReturnRequestedAt: Date | null;
+  // Return inspection
+  listerReturnInspected: boolean;
+  listerReturnInspectedAt: Date | null;
+  listerReturnDamageClaimed: boolean;
+  borrowerAcknowledgedReturn: boolean;
+  borrowerAcknowledgedReturnAt: Date | null;
+  // Pickup arrangement
+  pickupLocation: string | null;
+  agreedHandoverTime: Date | null;
   issues: BookingIssue[];
+  returnIssues: ReturnIssue[];
   rentalUpdates: RentalUpdate[];
 }
 
@@ -231,6 +241,14 @@ export interface RentalUpdate {
 // ─── Booking Issues ──────────────────────────────────────────────────────────
 
 export interface BookingIssue {
+  id: string;
+  bookingId: string;
+  description: string;
+  photos: string[];
+  createdAt: Date;
+}
+
+export interface ReturnIssue {
   id: string;
   bookingId: string;
   description: string;
