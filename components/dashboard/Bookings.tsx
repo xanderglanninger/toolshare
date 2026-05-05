@@ -118,7 +118,6 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
   const [loading, setLoading]           = useState(true);
   const [cancellingId, setCancellingId]         = useState<string | null>(null);
   const [confirmId, setConfirmId]               = useState<string | null>(null);
-  const [confirmingReturnId, setConfirmingReturnId] = useState<string | null>(null);
   const [openingMsg, setOpeningMsg]             = useState<string | null>(null);
   const [reviewBooking, setReviewBooking]       = useState<BookingWithDetails | null>(null);
   const [cancelRefundInfo, setCancelRefundInfo] = useState<{ tier: string; refundAmount: number } | null>(null);
@@ -172,21 +171,6 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
     } finally {
       setCancellingId(null);
       setConfirmId(null);
-    }
-  }
-
-  async function confirmReturn(id: string) {
-    setConfirmingReturnId(id);
-    try {
-      const res = await fetch(`/api/bookings/${id}/confirm-completion`, { method: "POST" });
-      const json = await res.json();
-      if (json.data?.bothConfirmed) {
-        setBookings((prev) =>
-          prev.map((b) => b.id === id ? { ...b, status: "COMPLETED" as BookingStatus } : b),
-        );
-      }
-    } finally {
-      setConfirmingReturnId(null);
     }
   }
 
@@ -304,15 +288,10 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
             const isPaid       = b.payment?.status === "SUCCEEDED";
             const needsPay     = b.status === "PENDING" && !isLent && !isPaid;
             const canCancel    = (b.status === "PENDING" || b.status === "CONFIRMED") && !b.listerHandoverSigned;
-            // Owner goes to handover contract page (replaces direct markAsActive)
-            const canHandOver      = b.status === "CONFIRMED" && isLent && isPaid && !b.listerHandoverSigned;
-            // Borrower goes to receipt contract page after owner has signed
-            const canConfirmReceipt = b.status === "CONFIRMED" && !isLent && b.listerHandoverSigned && !b.borrowerReceiptSigned;
-            // Both parties confirm return once the item is back (owner uses cancel-return flow instead when requested)
-            const canConfirmReturn = b.status === "ACTIVE" && !(isLent && b.cancelReturnRequested);
-            // Borrower requests cancel while active (navigates to cancel-return page)
+            // Wizard covers all handover + return steps for CONFIRMED and ACTIVE bookings
+            const canOpenWizard = (b.status === "CONFIRMED" && isPaid) || b.status === "ACTIVE";
+            // Early-return flow (cancel-return) stays separate
             const canRequestCancelReturn = b.status === "ACTIVE" && !isLent && !b.cancelReturnRequested;
-            // Owner sees cancel-return confirmation prompt
             const hasPendingCancelReturn = b.status === "ACTIVE" && isLent && b.cancelReturnRequested;
             const alreadyReviewed = session?.user?.id
               ? b.reviews.some((r) => r.reviewerId === session.user!.id)
@@ -321,6 +300,23 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
             const escrowStatus = (b.payment as any)?.escrowStatus as string | undefined;
             const thumb        = b.listing.images?.[0];
             const isConfirming = confirmId === b.id;
+
+            // Rec #6: Compute whether this booking needs the current user's immediate action
+            const needsAction: string | null = (() => {
+              if (isLent) {
+                if (b.status === "CONFIRMED" && isPaid && !b.listerInitiatedHandover) return "Start handover";
+                if (b.status === "CONFIRMED" && b.borrowerIssuesSubmitted && !b.listerConfirmedIssues) return "Review issues";
+                if (b.status === "CONFIRMED" && b.listerConfirmedIssues && !b.listerHandoverSigned) return "Sign handover";
+                if (b.status === "ACTIVE" && b.cancelReturnRequested && !b.ownerConfirmed) return "Confirm return";
+                if (b.status === "ACTIVE" && b.borrowerConfirmed && !b.ownerConfirmed) return "Confirm return";
+              } else {
+                if (b.status === "PENDING" && !isPaid) return "Pay now";
+                if (b.status === "CONFIRMED" && b.listerInitiatedHandover && !b.borrowerIssuesSubmitted) return "Inspect item";
+                if (b.status === "CONFIRMED" && b.listerConfirmedIssues && !b.borrowerReceiptSigned) return "Sign receipt";
+                if (b.status === "ACTIVE" && b.ownerConfirmed && !b.borrowerConfirmed) return "Confirm return";
+              }
+              return null;
+            })();
 
             return (
               <div
@@ -343,6 +339,16 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
                       </span>
                       <StatusBadge status={b.status} />
                       <EscrowBadge escrowStatus={escrowStatus} />
+                      {needsAction && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          fontSize: "0.68rem", fontWeight: 700, padding: "2px 8px",
+                          borderRadius: 20, background: "#f59e0b", color: "#fff",
+                          animation: "pulse 2s infinite",
+                        }}>
+                          ⚡ {needsAction}
+                        </span>
+                      )}
                     </div>
 
                     <p className={styles.cardTitle}>{b.listing.title}</p>
@@ -406,29 +412,14 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
                             Review
                           </button>
                         )}
-                        {canHandOver && (
-                          <button
-                            className={styles.btnMsg}
-                            onClick={() => router.push(`/dashboard/bookings/${b.id}/handover-contract`)}
-                          >
-                            Hand Over Item
-                          </button>
-                        )}
-                        {canConfirmReceipt && (
+                        {canOpenWizard && (
                           <button
                             className={styles.btnPay}
-                            onClick={() => router.push(`/dashboard/bookings/${b.id}/receipt-contract`)}
+                            onClick={() => router.push(`/dashboard/bookings/${b.id}/wizard`)}
                           >
-                            Received Item
-                          </button>
-                        )}
-                        {canConfirmReturn && (
-                          <button
-                            className={styles.btnMsg}
-                            disabled={confirmingReturnId === b.id}
-                            onClick={() => confirmReturn(b.id)}
-                          >
-                            {confirmingReturnId === b.id ? "…" : "Confirm Return"}
+                            {b.status === "ACTIVE"
+                              ? (isLent ? "Confirm Return" : "Return Item")
+                              : (isLent ? "Start Handover" : "View Handover")}
                           </button>
                         )}
                         {canRequestCancelReturn && (

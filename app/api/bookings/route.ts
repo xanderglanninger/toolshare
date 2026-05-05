@@ -6,6 +6,7 @@ import {
   getBookingsByOwner,
 } from "@/lib/services/booking.service";
 import { createNotification } from "@/lib/services/notification.service";
+import { db } from "@/lib/db/client";
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,6 +35,17 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const borrower = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { idVerificationStatus: true },
+    });
+    if (borrower?.idVerificationStatus !== "verified") {
+      return NextResponse.json(
+        { error: "Your identity must be verified before you can make a booking." },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

@@ -8,7 +8,7 @@ import {
   AlertTriangle, FileText, Package, MessageSquare,
 } from "lucide-react";
 import styles from "./wizard.module.css";
-import type { BookingWithDetails, BookingIssue, RentalUpdate } from "@/lib/types";
+import type { BookingWithDetails, BookingIssue, RentalUpdate, ReturnIssue } from "@/lib/types";
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
@@ -44,21 +44,24 @@ function fmtMoney(n: number) {
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
 const STEP_DEFS = [
-  { id: 1, label: "Booking Confirmed",     role: "both"     },
-  { id: 2, label: "Initiate Handover",     role: "lister"   },
-  { id: 3, label: "Inspect & Log Issues",  role: "borrower" },
-  { id: 4, label: "Review Issues",         role: "lister"   },
-  { id: 5, label: "Owner Signs",           role: "lister"   },
-  { id: 6, label: "Borrower Signs",        role: "borrower" },
-  { id: 7, label: "Return Item",           role: "borrower" },
-  { id: 8, label: "Confirm Receipt",       role: "lister"   },
-  { id: 9, label: "Leave a Review",        role: "both"     },
+  { id: 1,  label: "Booking Confirmed",     role: "both"     },
+  { id: 2,  label: "Initiate Handover",     role: "lister"   },
+  { id: 3,  label: "Inspect & Log Issues",  role: "borrower" },
+  { id: 4,  label: "Review Issues",         role: "lister"   },
+  { id: 5,  label: "Owner Signs",           role: "lister"   },
+  { id: 6,  label: "Borrower Signs",        role: "borrower" },
+  { id: 7,  label: "Return Item",           role: "borrower" },
+  { id: 8,  label: "Inspect Returned Item", role: "lister"   },
+  { id: 9,  label: "Review Damage Report",  role: "borrower" },
+  { id: 10, label: "Leave a Review",        role: "both"     },
 ] as const;
 
 type StepId = (typeof STEP_DEFS)[number]["id"];
 
 function getCompletions(b: BookingWithDetails) {
   // Each boolean indicates whether that step is done (backward-compat: later flags imply earlier)
+  const returnInspDone = b.listerReturnInspected || b.ownerConfirmed;
+  const ackDone = b.borrowerAcknowledgedReturn || (!b.listerReturnDamageClaimed && b.listerReturnInspected) || b.ownerConfirmed;
   return [
     true,                                                                      // 1 - always confirmed
     b.listerInitiatedHandover || b.listerHandoverSigned,                       // 2
@@ -67,14 +70,15 @@ function getCompletions(b: BookingWithDetails) {
     b.listerHandoverSigned,                                                    // 5
     b.borrowerReceiptSigned,                                                   // 6
     b.borrowerConfirmed,                                                       // 7
-    b.ownerConfirmed,                                                          // 8
-    b.status === "COMPLETED" && false,                                         // 9 - always show review step as open
+    returnInspDone,                                                            // 8
+    ackDone,                                                                   // 9
+    b.status === "COMPLETED" && false,                                         // 10 - always show review step as open
   ];
 }
 
 function getCurrentStep(completions: boolean[]): StepId {
   const idx = completions.findIndex((c) => !c);
-  if (idx === -1) return 9;
+  if (idx === -1) return 10;
   return (idx + 1) as StepId;
 }
 
@@ -154,6 +158,16 @@ function Sidebar({
           <p className={styles.sidebarItemTitle}>{booking.listing.title}</p>
           <p className={styles.sidebarDates}>{fmtDate(booking.startDate)} – {fmtDate(booking.endDate)}</p>
           <p className={styles.sidebarAmount}>{fmtMoney(booking.totalAmount)}</p>
+          {booking.pickupLocation && (
+            <p className={styles.sidebarDates} style={{ marginTop: 6 }}>
+              📍 {booking.pickupLocation}
+            </p>
+          )}
+          {booking.agreedHandoverTime && (
+            <p className={styles.sidebarDates}>
+              🕐 {new Date(booking.agreedHandoverTime).toLocaleString("en-ZA", { dateStyle: "short", timeStyle: "short" })}
+            </p>
+          )}
         </div>
       </div>
     </aside>
@@ -202,13 +216,28 @@ function Step1({ booking, isLister }: { booking: BookingWithDetails; isLister: b
 function Step2({
   booking, isLister, onAction,
 }: { booking: BookingWithDetails; isLister: boolean; onAction: () => void }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy]               = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [pickupLocation, setPickupLocation] = useState(booking.pickupLocation ?? "");
+  const [agreedTime, setAgreedTime]   = useState(
+    booking.agreedHandoverTime
+      ? new Date(booking.agreedHandoverTime).toISOString().slice(0, 16)
+      : ""
+  );
+
+  // Minimum datetime string for the datetime-local input (now)
+  const minDateTime = new Date(Date.now() - 60_000).toISOString().slice(0, 16);
 
   async function handle() {
+    if (!pickupLocation.trim()) { setError("Please enter a pickup location."); return; }
+    if (!agreedTime) { setError("Please select an agreed handover date and time."); return; }
     setBusy(true); setError(null);
     try {
-      const res = await fetch(`/api/bookings/${booking.id}/initiate-handover`, { method: "POST" });
+      const res = await fetch(`/api/bookings/${booking.id}/initiate-handover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pickupLocation: pickupLocation.trim(), agreedHandoverTime: new Date(agreedTime).toISOString() }),
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed");
       onAction();
@@ -219,8 +248,19 @@ function Step2({
   if (!isLister) {
     return (
       <div className={styles.stepContent}>
-        <p className={styles.stepContentEyebrow}>Step 2 — Initiate Handover</p>
+        <p className={styles.stepContentEyebrow}>Step 2 — Arrange Handover</p>
         <h2 className={styles.stepContentTitle}>Waiting for Owner</h2>
+        {booking.pickupLocation && (
+          <div className={styles.contractBox} style={{ marginBottom: 16 }}>
+            <div className={styles.contractBoxHeader}>📍 Agreed Pickup Details</div>
+            <div className={styles.contractBoxBody}>
+              <p><strong>Location:</strong> {booking.pickupLocation}</p>
+              {booking.agreedHandoverTime && (
+                <p><strong>Time:</strong> {new Date(booking.agreedHandoverTime).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })}</p>
+              )}
+            </div>
+          </div>
+        )}
         <WaitingPanel message={`${booking.listing.owner.name} needs to confirm they are ready to hand over the item. You'll be notified once they do.`} />
       </div>
     );
@@ -228,16 +268,50 @@ function Step2({
 
   return (
     <div className={styles.stepContent}>
-      <p className={styles.stepContentEyebrow}>Step 2 — Initiate Handover</p>
-      <h2 className={styles.stepContentTitle}>Ready to Hand Over?</h2>
+      <p className={styles.stepContentEyebrow}>Step 2 — Arrange Handover</p>
+      <h2 className={styles.stepContentTitle}>Set Pickup Details</h2>
       <p className={styles.stepContentBody}>
-        Click below to confirm that you are with the borrower and ready to hand over{" "}
-        <strong>{booking.listing.title}</strong>. This will prompt the borrower to inspect the item
-        and log any pre-existing issues.
+        Before handing over <strong>{booking.listing.title}</strong>, confirm where and when you will
+        meet the borrower. These details will appear on both signed contracts as proof of the agreed handover arrangement.
       </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+        <div>
+          <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 600, marginBottom: 5 }}>
+            Pickup location *
+          </label>
+          <input
+            type="text"
+            className={styles.textarea}
+            style={{ padding: "9px 12px", width: "100%", boxSizing: "border-box" }}
+            placeholder="e.g. 12 Main St, Johannesburg — or a landmark, shopping centre, etc."
+            value={pickupLocation}
+            onChange={e => setPickupLocation(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 600, marginBottom: 5 }}>
+            Agreed handover date &amp; time *
+          </label>
+          <input
+            type="datetime-local"
+            className={styles.textarea}
+            style={{ padding: "9px 12px", width: "100%", boxSizing: "border-box" }}
+            min={minDateTime}
+            value={agreedTime}
+            onChange={e => setAgreedTime(e.target.value)}
+          />
+        </div>
+      </div>
+
       {error && <p className={styles.errorText}>{error}</p>}
-      <button className={styles.btnPrimary} disabled={busy} onClick={handle}>
-        {busy ? "Processing…" : "Initiate Handover"}
+      <button
+        className={styles.btnPrimary}
+        disabled={busy || !pickupLocation.trim() || !agreedTime}
+        onClick={handle}
+      >
+        {busy ? "Processing…" : "Confirm & Initiate Handover"}
       </button>
     </div>
   );
@@ -581,6 +655,12 @@ function StepSign({
           <p><strong>Period:</strong> {fmtDate(booking.startDate)} – {fmtDate(booking.endDate)}</p>
           <p><strong>Total:</strong> {fmtMoney(booking.totalAmount)}</p>
           {booking.depositAmount && <p><strong>Deposit:</strong> {fmtMoney(booking.depositAmount)}</p>}
+          {booking.pickupLocation && (
+            <p><strong>Pickup location:</strong> {booking.pickupLocation}</p>
+          )}
+          {booking.agreedHandoverTime && (
+            <p><strong>Agreed handover time:</strong> {new Date(booking.agreedHandoverTime).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })}</p>
+          )}
           <hr className={styles.contractHr} />
           <p>
             By signing, <strong>{signerName}</strong> confirms that they have read and understood
@@ -814,17 +894,43 @@ function Step7({
   );
 }
 
-// Step 8 — Confirm Receipt (lister)
+// Step 8 — Inspect Returned Item (lister)
 function Step8({
   booking, isLister, onAction,
 }: { booking: BookingWithDetails; isLister: boolean; onAction: () => void }) {
-  const [busy, setBusy]   = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
+  const [photos, setPhotos]           = useState<string[]>([]);
+  const [claimDeposit, setClaimDeposit] = useState(false);
+  const [uploading, setUploading]     = useState(false);
+  const [busy, setBusy]               = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [lightbox, setLightbox]       = useState<string | null>(null);
+  const fileRef                       = useRef<HTMLInputElement>(null);
 
-  async function handle() {
+  const hasDeposit = (booking as any).depositAmount > 0;
+
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const res  = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Upload failed");
+      setPhotos(p => [...p, json.data.url]);
+    } catch (e: any) { setError(e.message); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+  }
+
+  async function handleSubmit() {
     setBusy(true); setError(null);
     try {
-      const res = await fetch(`/api/bookings/${booking.id}/confirm-completion`, { method: "POST" });
+      const res  = await fetch(`/api/bookings/${booking.id}/submit-return-inspection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, photos, claimDeposit }),
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed");
       onAction();
@@ -835,39 +941,154 @@ function Step8({
   if (!isLister) {
     return (
       <div className={styles.stepContent}>
-        <p className={styles.stepContentEyebrow}>Step 8 — Confirm Receipt</p>
-        <h2 className={styles.stepContentTitle}>Waiting for Owner</h2>
-        <WaitingPanel message={`Waiting for ${booking.listing.owner.name} to confirm they've received the item back. Your deposit will be released once they confirm.`} />
+        <p className={styles.stepContentEyebrow}>Step 8 — Inspect Returned Item</p>
+        <h2 className={styles.stepContentTitle}>Waiting for Owner Inspection</h2>
+        <WaitingPanel message={`${booking.listing.owner.name} is inspecting the returned item. You'll be notified once the inspection is complete.`} />
       </div>
     );
   }
 
   return (
     <div className={styles.stepContent}>
-      <p className={styles.stepContentEyebrow}>Step 8 — Confirm Receipt</p>
-      <h2 className={styles.stepContentTitle}>Confirm You've Received the Item</h2>
+      {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
+      <p className={styles.stepContentEyebrow}>Step 8 — Inspect Returned Item</p>
+      <h2 className={styles.stepContentTitle}>Inspect the Returned Item</h2>
       <p className={styles.stepContentBody}>
-        {booking.borrower.name} has marked the item as returned. Please confirm that you have
-        physically received <strong>{booking.listing.title}</strong> back. This will complete
-        the booking and release the funds.
+        {booking.borrower.name} has marked <strong>{booking.listing.title}</strong> as returned.
+        Inspect the item thoroughly and upload photos documenting its condition. If you found damage
+        not present at handover, you can claim the deposit.
       </p>
+
+      <div className={styles.addIssueForm}>
+        <textarea
+          className={styles.textarea}
+          placeholder="Describe the item's condition on return — any scratches, missing parts, or damage…"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows={4}
+        />
+        <div className={styles.photoRow}>
+          {photos.map((url, i) => (
+            <div key={i} className={styles.photoThumbWrap}>
+              <img src={url} alt="" className={styles.photoThumb} onClick={() => setLightbox(url)} />
+              <button className={styles.photoRemove} onClick={() => setPhotos(p => p.filter((_, j) => j !== i))}>
+                <X size={10} />
+              </button>
+            </div>
+          ))}
+          <button className={styles.photoAddBtn} disabled={uploading} onClick={() => fileRef.current?.click()}>
+            {uploading ? "…" : <><Camera size={13} /> Photo</>}
+          </button>
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" style={{ display: "none" }} onChange={handlePhoto} />
+        </div>
+      </div>
+
+      {hasDeposit && (
+        <label className={styles.noIssuesRow}>
+          <input
+            type="checkbox"
+            className={styles.checkbox}
+            checked={claimDeposit}
+            onChange={e => setClaimDeposit(e.target.checked)}
+          />
+          <span>
+            Claim deposit due to damage — the borrower will be notified and can accept or dispute
+          </span>
+        </label>
+      )}
+
       {error && <p className={styles.errorText}>{error}</p>}
-      <button className={styles.btnPrimary} disabled={busy} onClick={handle}>
-        {busy ? "Processing…" : "Confirm Item Received"}
-      </button>
+      <div className={styles.actionRow}>
+        <button className={styles.btnPrimary} disabled={busy || uploading} onClick={handleSubmit}>
+          {busy ? "Submitting…" : claimDeposit ? "Submit Inspection & Claim Deposit" : "Submit Inspection — No Damage"}
+        </button>
+      </div>
     </div>
   );
 }
 
-// Step 9 — Review
+// Step 9 — Review Damage Report (borrower)
 function Step9({
+  booking, isLister, returnIssues, onAction,
+}: { booking: BookingWithDetails; isLister: boolean; returnIssues: ReturnIssue[]; onAction: () => void }) {
+  const [busy, setBusy]         = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  async function handle(dispute: boolean) {
+    setBusy(true); setError(null);
+    try {
+      const res  = await fetch(`/api/bookings/${booking.id}/acknowledge-return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dispute }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed");
+      onAction();
+    } catch (e: any) { setError(e.message); }
+    finally { setBusy(false); }
+  }
+
+  if (isLister) {
+    return (
+      <div className={styles.stepContent}>
+        <p className={styles.stepContentEyebrow}>Step 9 — Review Damage Report</p>
+        <h2 className={styles.stepContentTitle}>Waiting for Borrower</h2>
+        <WaitingPanel message={`Waiting for ${booking.borrower.name} to review and respond to your damage report.`} />
+      </div>
+    );
+  }
+
+  const latestIssue = returnIssues[returnIssues.length - 1];
+
+  return (
+    <div className={styles.stepContent}>
+      {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)} />}
+      <p className={styles.stepContentEyebrow}>Step 9 — Review Damage Report</p>
+      <h2 className={styles.stepContentTitle}>Owner Reported Damage</h2>
+      <p className={styles.stepContentBody}>
+        {booking.listing.owner.name} has reported damage to <strong>{booking.listing.title}</strong> and is claiming the deposit.
+        Review their report below and choose to accept or dispute it.
+      </p>
+
+      {latestIssue && (
+        <div className={styles.issueCard}>
+          {latestIssue.description && (
+            <p className={styles.issueDesc}>{latestIssue.description}</p>
+          )}
+          {latestIssue.photos.length > 0 && (
+            <div className={styles.issuePhotos}>
+              {latestIssue.photos.map((url, i) => (
+                <img key={i} src={url} alt="" className={styles.issuePhoto} onClick={() => setLightbox(url)} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <p className={styles.errorText}>{error}</p>}
+      <div className={styles.actionRow}>
+        <button className={styles.btnPrimary} disabled={busy} onClick={() => handle(false)}>
+          {busy ? "Processing…" : "Accept — deposit kept by owner"}
+        </button>
+        <button className={styles.btnSecondary} disabled={busy} onClick={() => handle(true)}>
+          Dispute — escalate to admin
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Step 10 — Review
+function Step10({
   booking, isLister, userId, router,
 }: { booking: BookingWithDetails; isLister: boolean; userId: string; router: ReturnType<typeof useRouter> }) {
   const alreadyReviewed = booking.reviews.some(r => r.reviewerId === userId);
 
   return (
     <div className={styles.stepContent}>
-      <p className={styles.stepContentEyebrow}>Step 9 — Leave a Review</p>
+      <p className={styles.stepContentEyebrow}>Step 10 — Leave a Review</p>
       <h2 className={styles.stepContentTitle}>Booking Complete!</h2>
       <DonePanel message="The booking has been completed successfully. Funds will be released within 48 hours." />
       <p className={styles.stepContentBody}>
@@ -894,24 +1115,33 @@ export default function WizardPage() {
   const router            = useRouter();
   const { id }            = useParams<{ id: string }>();
 
-  const [booking, setBooking]         = useState<BookingWithDetails | null>(null);
-  const [issues,  setIssues]          = useState<BookingIssue[]>([]);
+  const [booking, setBooking]             = useState<BookingWithDetails | null>(null);
+  const [issues,  setIssues]              = useState<BookingIssue[]>([]);
+  const [returnIssues, setReturnIssues]   = useState<ReturnIssue[]>([]);
   const [rentalUpdates, setRentalUpdates] = useState<RentalUpdate[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading]             = useState(true);
 
   async function load() {
-    const [bRes, iRes, uRes] = await Promise.all([
+    const [bRes, iRes, rRes, uRes] = await Promise.all([
       fetch(`/api/bookings/${id}`).then(r => r.json()),
       fetch(`/api/bookings/${id}/issues`).then(r => r.json()),
+      fetch(`/api/bookings/${id}/return-issues`).then(r => r.json()),
       fetch(`/api/bookings/${id}/rental-updates`).then(r => r.json()),
     ]);
     setBooking(bRes.data ?? null);
     setIssues(iRes.data ?? []);
+    setReturnIssues(rRes.data ?? []);
     setRentalUpdates(uRes.data ?? []);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, [id]);
+
+  // Poll every 5 s so the waiting user's screen advances when the other user acts
+  useEffect(() => {
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [id]);
 
   if (loading) return <div className={styles.loading}>Loading…</div>;
   if (!booking) return <div className={styles.loading}>Booking not found.</div>;
@@ -979,7 +1209,15 @@ export default function WizardPage() {
         />
       );
       case 8: return <Step8 booking={booking!} isLister={isLister} onAction={refresh} />;
-      case 9: return <Step9 booking={booking!} isLister={isLister} userId={userId} router={router} />;
+      case 9: return (
+        <Step9
+          booking={booking!}
+          isLister={isLister}
+          returnIssues={returnIssues}
+          onAction={refresh}
+        />
+      );
+      case 10: return <Step10 booking={booking!} isLister={isLister} userId={userId} router={router} />;
       default: return null;
     }
   }

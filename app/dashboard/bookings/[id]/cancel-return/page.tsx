@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
-import { FileText, ArrowLeft, CheckCircle, Clock } from "lucide-react";
+import { FileText, ArrowLeft, CheckCircle, Clock, Camera, X } from "lucide-react";
 import styles from "../contract.module.css";
 import type { BookingWithDetails } from "@/lib/types";
 
@@ -24,6 +24,32 @@ export default function CancelReturnPage() {
   const [confirmingReturn, setConfirmingReturn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Rec #2: Return photos — borrower uploads before submitting; owner sees them before confirming
+  const [returnPhotos, setReturnPhotos] = useState<string[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [ownerConditionOk, setOwnerConditionOk] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Upload failed");
+      setReturnPhotos(prev => [...prev, json.data.url]);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setUploadingPhoto(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   useEffect(() => {
     fetch(`/api/bookings/${id}`)
       .then(r => r.json())
@@ -36,9 +62,22 @@ export default function CancelReturnPage() {
   }, [id]);
 
   async function handleSubmitReturn() {
+    if (returnPhotos.length === 0) {
+      setError("Please upload at least one photo of the returned item before submitting.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
+      // Save return photos as a rental update before requesting cancellation
+      await fetch(`/api/bookings/${id}/rental-updates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "Item condition at return — documented by borrower.",
+          photos: returnPhotos,
+        }),
+      });
       const res = await fetch(`/api/bookings/${id}/request-cancel-return`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to submit");
@@ -116,16 +155,43 @@ export default function CancelReturnPage() {
           <div className={styles.signatureCard}>
             <p className={styles.signatureTitle}>Have you received the item back?</p>
             <p className={styles.contractText} style={{ fontSize: "13px", color: "var(--text-3)" }}>
-              If you confirm receipt, the booking will be cancelled. If you have not received the item,
-              select "Item Not Returned" — the borrower will be notified and the booking will remain active.
+              The borrower has submitted return photos. Review them and confirm whether the item has been
+              returned in acceptable condition.
             </p>
+
+            {/* Rec #2: Show borrower's return photos to owner */}
+            {booking.rentalUpdates && booking.rentalUpdates.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <p style={{ fontSize: "0.8rem", fontWeight: 600, marginBottom: 8 }}>📷 Return photos submitted by borrower</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {booking.rentalUpdates
+                    .filter(u => (u as any).message?.includes("condition at return"))
+                    .flatMap((u: any) => u.photos)
+                    .map((url: string, i: number) => (
+                      <img key={i} src={url} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border, #ddd)" }} />
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+
+            {/* Rec #2: Owner must acknowledge condition before confirming */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: "0.82rem", marginBottom: 14, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                style={{ marginTop: 2 }}
+                checked={ownerConditionOk}
+                onChange={e => setOwnerConditionOk(e.target.checked)}
+              />
+              <span>I confirm I have inspected the returned item. If there is damage beyond normal wear and tear, I will open a dispute within 48 hours.</span>
+            </label>
 
             {error && <p style={{ color: "#f87171", fontSize: "13px" }}>{error}</p>}
 
             <div className={styles.btnRow}>
               <button
                 className={styles.btnSign}
-                disabled={confirmingReturn}
+                disabled={confirmingReturn || !ownerConditionOk}
                 onClick={() => handleConfirmReturn(true)}
               >
                 {confirmingReturn ? "Processing…" : "Yes, I Received the Item"}
@@ -203,7 +269,7 @@ export default function CancelReturnPage() {
               </p>
               <p className={styles.contractText}>
                 (b) Once the Owner confirms receipt, the booking will be cancelled and any applicable refund
-                will be processed according to LendMe's cancellation policy.
+                will be processed according to ToolShare's cancellation policy.
               </p>
               <p className={styles.contractText}>
                 (c) If the Owner does not confirm receipt, you will be notified and the booking will remain
@@ -215,7 +281,7 @@ export default function CancelReturnPage() {
               <p className={styles.contractSectionTitle}>3. Acknowledgement</p>
               <p className={styles.contractText}>
                 I understand that making a false declaration regarding the return of the item may result in
-                account suspension and legal consequences under LendMe's Terms of Service.
+                account suspension and legal consequences under ToolShare's Terms of Service.
               </p>
             </div>
           </div>
@@ -230,6 +296,41 @@ export default function CancelReturnPage() {
         ) : (
           <div className={styles.signatureCard}>
             <p className={styles.signatureTitle}>Sign Return Declaration</p>
+
+            {/* Rec #2: Return photo upload */}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ fontSize: "0.82rem", fontWeight: 600, marginBottom: 6 }}>
+                📷 Photo evidence of return *
+              </p>
+              <p style={{ fontSize: "0.76rem", color: "var(--text-3, #888)", marginBottom: 10 }}>
+                Upload at least one photo showing the item returned to the owner. These photos will be
+                visible to the owner and stored as part of the rental record.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {returnPhotos.map((url, i) => (
+                  <div key={i} style={{ position: "relative" }}>
+                    <img src={url} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border, #ddd)" }} />
+                    <button
+                      onClick={() => setReturnPhotos(p => p.filter((_, j) => j !== i))}
+                      style={{ position: "absolute", top: -6, right: -6, background: "#ef4444", color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  style={{ width: 72, height: 72, borderRadius: 8, border: "2px dashed var(--border, #ccc)", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, fontSize: "0.7rem", color: "var(--text-3, #aaa)" }}
+                >
+                  {uploadingPhoto ? "…" : <><Camera size={18} /><span>Add photo</span></>}
+                </button>
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" style={{ display: "none" }} onChange={handlePhotoUpload} />
+              </div>
+              {returnPhotos.length === 0 && (
+                <p style={{ fontSize: "0.74rem", color: "#f87171", marginTop: 6 }}>At least 1 photo required.</p>
+              )}
+            </div>
 
             <label className={styles.checkRow}>
               <input
@@ -249,7 +350,7 @@ export default function CancelReturnPage() {
             <div className={styles.btnRow}>
               <button
                 className={styles.btnSign}
-                disabled={!agreed || submitting}
+                disabled={!agreed || submitting || returnPhotos.length === 0}
                 onClick={handleSubmitReturn}
               >
                 {submitting ? "Submitting…" : "Sign & Request Cancellation"}
