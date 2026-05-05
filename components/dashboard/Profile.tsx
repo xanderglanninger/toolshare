@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import styles from "./Profile.module.css";
+import { useDashboard } from "@/app/dashboard/context";
 
 type AccountStatus =
   | { state: "loading" }
@@ -31,8 +32,12 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
   return             { score, label: "Strong", color: "#22c55e" };
 }
 
+type UploadSlot = { url: string; preview: string; uploading: boolean; error: string };
+const emptySlot = (): UploadSlot => ({ url: "", preview: "", uploading: false, error: "" });
+
 export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) {
   const { data: session, update: updateSession } = useSession();
+  const { idVerificationStatus, setIdVerificationStatus } = useDashboard();
   const searchParams = useSearchParams();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +60,12 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
   const [connecting,     setConnecting]     = useState(false);
 
   const [toast, setToast] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
+
+  const [selfie,    setSelfie]    = useState<UploadSlot>(emptySlot());
+  const [idPhoto,   setIdPhoto]   = useState<UploadSlot>(emptySlot());
+  const [kycSaving, setKycSaving] = useState(false);
+  const selfieRef  = useRef<HTMLInputElement>(null);
+  const idPhotoRef = useRef<HTMLInputElement>(null);
 
   const pwStrength = getPasswordStrength(newPw);
 
@@ -174,6 +185,43 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
       showToast(err.message ?? "Something went wrong.", "err");
     } finally {
       setPwSaving(false);
+    }
+  }
+
+  async function uploadKycFile(file: File, kind: "selfie" | "id_photo", set: (s: UploadSlot) => void) {
+    const preview = URL.createObjectURL(file);
+    set({ url: "", preview, uploading: true, error: "" });
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("kind", kind);
+    try {
+      const res  = await fetch("/api/register/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) set({ url: "", preview, uploading: false, error: data.error || "Upload failed." });
+      else         set({ url: data.url, preview, uploading: false, error: "" });
+    } catch {
+      set({ url: "", preview, uploading: false, error: "Upload failed. Please try again." });
+    }
+  }
+
+  async function handleKycSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selfie.url || !idPhoto.url) return;
+    setKycSaving(true);
+    try {
+      const res  = await fetch("/api/users/kyc-docs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selfieUrl: selfie.url, idPhotoUrl: idPhoto.url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Submission failed");
+      setIdVerificationStatus("pending");
+      showToast("Documents submitted — you'll be notified once verified.", "ok");
+    } catch (err: any) {
+      showToast(err.message ?? "Something went wrong.", "err");
+    } finally {
+      setKycSaving(false);
     }
   }
 
@@ -313,6 +361,91 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
             </button>
           </div>
         </form>
+      </div>
+
+      {/* ── Identity Verification ── */}
+      <div className={styles.section}>
+        <div className={styles.sectionHead}>
+          <div className={styles.sectionHeadLeft}>
+            <div className={styles.sectionIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div>
+              <p className={styles.sectionTitle}>Identity Verification</p>
+              <p className={styles.sectionSub}>
+                {idVerificationStatus === "verified"
+                  ? "Your identity is verified. You can book and list equipment."
+                  : idVerificationStatus === "pending"
+                  ? "Documents received — under review, usually within 24 hours."
+                  : "Verify your identity to book or list equipment on the platform."}
+              </p>
+            </div>
+          </div>
+          <span className={`${styles.chip} ${
+            idVerificationStatus === "verified"  ? styles.chipGreen :
+            idVerificationStatus === "pending"   ? styles.chipAmber :
+            idVerificationStatus === "rejected"  ? styles.chipRed   : styles.chipGrey
+          }`}>
+            {idVerificationStatus === "verified"  ? "✓ Verified"  :
+             idVerificationStatus === "pending"   ? "Pending"     :
+             idVerificationStatus === "rejected"  ? "Rejected"    : "Not verified"}
+          </span>
+        </div>
+
+        {(idVerificationStatus === "unverified" || idVerificationStatus === "rejected") && (
+          <form className={styles.sectionBody} onSubmit={handleKycSubmit}>
+            {idVerificationStatus === "rejected" && (
+              <div className={styles.warningBox}>
+                <span className={styles.warningIcon}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+                <div>
+                  <p className={styles.warningTitle}>Submission rejected</p>
+                  <p className={styles.warningDesc}>Please upload clearer photos and resubmit.</p>
+                </div>
+              </div>
+            )}
+            <div className={styles.kycUploadRow}>
+              <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: "none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadKycFile(f, "selfie", setSelfie); }} />
+              <div className={styles.kycSlot} onClick={() => selfieRef.current?.click()}>
+                {selfie.preview
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={selfie.preview} alt="Selfie" className={styles.kycThumb} />
+                  : <div className={styles.kycSlotEmpty}>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>}
+                <div className={styles.kycSlotLabel}>
+                  {selfie.uploading ? "Uploading…" : selfie.url ? "✓ Selfie ready" : "Take / upload selfie"}
+                </div>
+                {selfie.error && <p className={styles.kycSlotErr}>{selfie.error}</p>}
+              </div>
+
+              <input ref={idPhotoRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadKycFile(f, "id_photo", setIdPhoto); }} />
+              <div className={styles.kycSlot} onClick={() => idPhotoRef.current?.click()}>
+                {idPhoto.preview
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={idPhoto.preview} alt="ID document" className={styles.kycThumb} />
+                  : <div className={styles.kycSlotEmpty}>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4M14 15h4"/></svg>
+                    </div>}
+                <div className={styles.kycSlotLabel}>
+                  {idPhoto.uploading ? "Uploading…" : idPhoto.url ? "✓ ID ready" : "Upload SA ID document"}
+                </div>
+                {idPhoto.error && <p className={styles.kycSlotErr}>{idPhoto.error}</p>}
+              </div>
+            </div>
+            <div className={styles.formFooter}>
+              <button type="submit" className={styles.saveBtn}
+                disabled={!selfie.url || !idPhoto.url || selfie.uploading || idPhoto.uploading || kycSaving}>
+                {kycSaving ? <><span className={styles.inlineSpinner} /> Submitting…</> : "Submit for verification"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* ── Security ── */}
