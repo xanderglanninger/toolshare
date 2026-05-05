@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const result = await confirmPayment(bookingId, paymentIntentId);
+    const result = await confirmPayment(bookingId, paymentIntentId, session.user.id);
     return NextResponse.json({ data: result });
   } catch (error: any) {
     return NextResponse.json(

@@ -67,13 +67,16 @@ export async function createRentalPaymentIntent(
 
 export async function confirmPayment(
   bookingId: string,
-  paymentIntentId: string
+  paymentIntentId: string,
+  borrowerId: string
 ): Promise<{ success: boolean; paymentReference: string }> {
   const booking = await db.booking.findUnique({
     where: { id: bookingId },
     include: { payment: true },
   });
   if (!booking) throw new Error("Booking not found.");
+  // Fix #2: Ensure only the booking's borrower can confirm payment
+  if (booking.borrowerId !== borrowerId) throw new Error("Forbidden.");
 
   if (booking.status === "CONFIRMED" && booking.payment?.status === "SUCCEEDED") {
     return { success: true, paymentReference: booking.payment.paymentReference ?? paymentIntentId };
@@ -116,18 +119,32 @@ export async function getPaymentByBooking(bookingId: string): Promise<Payment | 
 }
 
 export async function releaseEscrow(bookingId: string): Promise<void> {
+  // Fix #10: Atomically claim the HELD → RELEASING transition so concurrent cron runs
+  // are idempotent — only one execution can win; the other sees count=0 and exits.
+  const claimed = await db.payment.updateMany({
+    where: { bookingId, escrowStatus: "HELD" },
+    data: { escrowStatus: "RELEASING" },
+  });
+  if (claimed.count === 0) {
+    // Another process already claimed or escrow is not in HELD state — skip silently
+    return;
+  }
+
   const payment = await db.payment.findUnique({
     where: { bookingId },
     include: { booking: { include: { listing: { select: { owner: { select: { id: true, stripeAccountId: true, stripeAccountEnabled: true } } } } } } },
   });
   if (!payment) throw new Error("Payment not found.");
-  if (payment.escrowStatus !== "HELD") throw new Error("Escrow is not in HELD state.");
   if (!payment.booking.listing.owner.stripeAccountId) throw new Error("Owner has no connected Stripe account.");
 
   const openDispute = await db.report.findFirst({
     where: { bookingId, escrowFrozen: true, status: { in: ["PENDING", "REVIEWED"] } },
   });
-  if (openDispute) throw new Error("Cannot release escrow while a dispute is open.");
+  if (openDispute) {
+    // Revert the status claim so the dispute freeze takes effect
+    await db.payment.update({ where: { bookingId }, data: { escrowStatus: "DISPUTED" } });
+    throw new Error("Cannot release escrow while a dispute is open.");
+  }
 
   const amountInCents = Math.round(payment.amount * 100);
   const transfer = await stripe.transfers.create(
