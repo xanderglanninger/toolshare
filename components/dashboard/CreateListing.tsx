@@ -155,6 +155,12 @@ type FormData = {
   title: string;
   description: string;
   category: string;
+  quantity: string;
+  make: string;
+  model: string;
+  size: string;
+  currentValue: string;
+  itemInsured: boolean;
   images: string[];
   pricePerDay: string;
   pricePerWeek: string;
@@ -203,6 +209,7 @@ const STEPS = [
 
 const INITIAL: FormData = {
   title: "", description: "", category: "",
+  quantity: "1", make: "", model: "", size: "", currentValue: "", itemInsured: false,
   images: [],
   pricePerDay: "", pricePerWeek: "", pricePerMonth: "", depositAmount: "",
   availableFrom: "", availableTo: "",
@@ -339,6 +346,14 @@ function LivePreview({ form }: { form: FormData }) {
 // ─── Step 1: Details ───────────────────────────────────────────────────────
 
 function Step1({ form, onChange }: { form: FormData; onChange: (k: keyof FormData, v: any) => void }) {
+  const [showInsuranceWarning, setShowInsuranceWarning] = useState(false);
+
+  const handleInsuredToggle = () => {
+    const next = !form.itemInsured;
+    onChange("itemInsured", next);
+    if (!next) setShowInsuranceWarning(true);
+  };
+
   return (
     <>
       <p className={styles.stepTitle}>What are you listing?</p>
@@ -382,6 +397,101 @@ function Step1({ form, onChange }: { form: FormData; onChange: (k: keyof FormDat
         />
         <span className={styles.charCount}>{form.description.length} / 2000</span>
       </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionHeaderIcon}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div className={styles.sectionHeaderText}>
+          <p className={styles.sectionTitle}>Item details</p>
+          <p className={styles.sectionSub}>All fields are optional but help borrowers find your listing.</p>
+        </div>
+      </div>
+
+      <div className={`${styles.field} ${styles.halfWidth}`}>
+        <label htmlFor="quantity">How many of this item do you have? <span className={styles.req}>*</span></label>
+        <input
+          id="quantity" type="number" min="1" max="100" step="1"
+          placeholder="1"
+          value={form.quantity}
+          onChange={(e) => onChange("quantity", e.target.value)}
+        />
+      </div>
+
+      <div className={styles.twoCol}>
+        <div className={styles.field}>
+          <label htmlFor="make">Make <span className={styles.optional}>(optional)</span></label>
+          <input
+            id="make" type="text"
+            placeholder="e.g. Sony, Bosch, Trek"
+            value={form.make}
+            onChange={(e) => onChange("make", e.target.value)}
+          />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="itemModel">Model <span className={styles.optional}>(optional)</span></label>
+          <input
+            id="itemModel" type="text"
+            placeholder="e.g. A7 III, GSB 18V, Domane SL"
+            value={form.model}
+            onChange={(e) => onChange("model", e.target.value)}
+          />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="size">Size <span className={styles.optional}>(optional)</span></label>
+          <input
+            id="size" type="text"
+            placeholder="e.g. Large, 56cm, 1.5L"
+            value={form.size}
+            onChange={(e) => onChange("size", e.target.value)}
+          />
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="currentValue">Current value <span className={styles.optional}>(optional)</span></label>
+          <div className={styles.inputPrefix}>
+            <span className={styles.prefix}>R</span>
+            <input
+              id="currentValue" type="number" min="0" step="1" placeholder="0"
+              value={form.currentValue}
+              onChange={(e) => onChange("currentValue", e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <label className={styles.checkRow} onClick={handleInsuredToggle}>
+        <div className={`${styles.checkbox} ${form.itemInsured ? styles.checkboxChecked : ""}`}>
+          {form.itemInsured && Icons.check}
+        </div>
+        <div>
+          <span className={styles.toggleLabel}>Item is insured</span>
+          <p className={styles.toggleSub}>Let borrowers know this item is covered by insurance</p>
+        </div>
+      </label>
+
+      {showInsuranceWarning && (
+        <div className={styles.modalOverlay} onClick={() => setShowInsuranceWarning(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalIcon}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <p className={styles.modalTitle}>Item not insured</p>
+            <p className={styles.modalBody}>
+              Listing an uninsured item means you bear full financial risk if it&apos;s damaged or lost during a rental. Consider insuring your item before listing it.
+            </p>
+            <button className={styles.modalBtnPrimary} type="button" onClick={() => setShowInsuranceWarning(false)} style={{ width: "100%" }}>
+              I understand
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -729,10 +839,11 @@ function Step5({ form }: { form: FormData }) {
 
 export default function CreateListing() {
   const router = useRouter();
-  const [step, setStep]               = useState(1);
-  const [form, setForm]               = useState<FormData>(INITIAL);
-  const [submitting, setSubmitting]   = useState(false);
-  const [error, setError]             = useState<string | null>(null);
+  const [step, setStep]                       = useState(1);
+  const [form, setForm]                       = useState<FormData>(INITIAL);
+  const [submitting, setSubmitting]           = useState(false);
+  const [error, setError]                     = useState<string | null>(null);
+  const [showInsuranceGate, setShowInsuranceGate] = useState(false);
 
   const onChange = useCallback((key: keyof FormData, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -743,6 +854,8 @@ export default function CreateListing() {
       if (!form.category)                        return "Please select a category.";
       if (form.title.trim().length < 5)          return "Title must be at least 5 characters.";
       if (form.description.trim().length < 20)   return "Description must be at least 20 characters.";
+      const qty = parseInt(form.quantity, 10);
+      if (!form.quantity || isNaN(qty) || qty < 1) return "Quantity must be at least 1.";
     }
     if (step === 2 && form.images.length === 0)  return "Please add at least one photo.";
     if (step === 3 && (!form.pricePerDay || parseFloat(form.pricePerDay) <= 0))
@@ -755,12 +868,17 @@ export default function CreateListing() {
     return null;
   };
 
-  const next = () => {
-    const err = validate();
-    if (err) { setError(err); return; }
+  const advanceStep = () => {
     setError(null);
     setStep((s) => Math.min(s + 1, 5));
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const next = () => {
+    const err = validate();
+    if (err) { setError(err); return; }
+    if (step === 1 && !form.itemInsured) { setShowInsuranceGate(true); return; }
+    advanceStep();
   };
 
   const back = () => {
@@ -776,6 +894,12 @@ export default function CreateListing() {
         title:             form.title,
         description:       form.description,
         category:          form.category,
+        quantity:          form.quantity ? parseInt(form.quantity, 10) : 1,
+        make:              form.make      || null,
+        model:             form.model     || null,
+        size:              form.size      || null,
+        currentValue:      form.currentValue ? parseFloat(form.currentValue) : null,
+        itemInsured:       form.itemInsured,
         images:            form.images,
         pricePerDay:       parseFloat(form.pricePerDay),
         pricePerWeek:      form.pricePerWeek  ? parseFloat(form.pricePerWeek)  : null,
@@ -871,6 +995,37 @@ export default function CreateListing() {
           <LivePreview form={form} />
         </div>
       </div>
+
+      {showInsuranceGate && (
+        <div className={styles.modalOverlay} onClick={() => setShowInsuranceGate(false)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalIcon}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <p className={styles.modalTitle}>Your item isn&apos;t insured</p>
+            <p className={styles.modalBody}>
+              We strongly recommend insuring your item before listing it. If it&apos;s damaged or lost during a rental you bear the full financial risk. Are you sure you want to continue without insurance?
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalBtnGhost} type="button"
+                onClick={() => setShowInsuranceGate(false)}
+              >
+                Go back
+              </button>
+              <button
+                className={styles.modalBtnPrimary} type="button"
+                onClick={() => { setShowInsuranceGate(false); advanceStep(); }}
+              >
+                Continue anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

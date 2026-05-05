@@ -582,6 +582,143 @@
   margin-top: 1px;
 }
 
+/* ─── Checkbox row (insured) ────────────────────────── */
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  user-select: none;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border-1);
+  border-radius: 10px;
+  background: var(--bg-card-2);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.checkRow:hover { border-color: var(--border-3); background: var(--bg-card-3); }
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-2);
+  background: var(--bg-card-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+  color: #fff;
+}
+
+.checkboxChecked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ─── Insurance warning modal ───────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modalCard {
+  background: #1a1814;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.modalIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.12);
+  color: #ca8a04;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f5f0e8;
+  margin: 0;
+}
+
+.modalBody {
+  font-size: 13px;
+  color: #a89f91;
+  line-height: 1.6;
+  margin: 0 0 6px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.modalBtnGhost {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 9px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #c8bfb2;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.modalBtnGhost:hover {
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.05);
+  color: #f5f0e8;
+}
+
+.modalBtnPrimary {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 9px;
+  border: none;
+  background: var(--accent);
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.modalBtnPrimary:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
 /* ─── Review card ───────────────────────────────────── */
 
 .reviewCard {
