@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
-import { FileText, ArrowLeft, CheckCircle } from "lucide-react";
+import { FileText, ArrowLeft, CheckCircle, AlertTriangle, ShieldCheck } from "lucide-react";
 import styles from "../contract.module.css";
-import type { BookingWithDetails } from "@/lib/types";
+import issueStyles from "./handover.module.css";
+import type { BookingWithDetails, BookingIssue } from "@/lib/types";
 
 function fmt(d: Date | string) {
   return new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" });
@@ -20,22 +21,39 @@ export default function HandoverContractPage() {
   const { id } = useParams<{ id: string }>();
 
   const [booking, setBooking] = useState<BookingWithDetails | null>(null);
+  const [issues, setIssues] = useState<BookingIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [agreed, setAgreed] = useState(false);
+  const [confirmedIssues, setConfirmedIssues] = useState<Set<string>>(new Set());
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/bookings/${id}`)
-      .then(r => r.json())
-      .then(j => {
-        setBooking(j.data ?? null);
-        if (j.data?.listerHandoverSigned) setSigned(true);
+    Promise.all([
+      fetch(`/api/bookings/${id}`).then(r => r.json()),
+      fetch(`/api/bookings/${id}/issues`).then(r => r.json()),
+    ])
+      .then(([bookingRes, issuesRes]) => {
+        setBooking(bookingRes.data ?? null);
+        if (bookingRes.data?.listerHandoverSigned) setSigned(true);
+        setIssues(issuesRes.data ?? []);
       })
       .catch(() => setBooking(null))
       .finally(() => setLoading(false));
   }, [id]);
+
+  function toggleIssue(issueId: string) {
+    setConfirmedIssues(prev => {
+      const next = new Set(prev);
+      if (next.has(issueId)) next.delete(issueId);
+      else next.add(issueId);
+      return next;
+    });
+  }
+
+  const allIssuesConfirmed = issues.length === 0 || issues.every(i => confirmedIssues.has(i.id));
+  const canSign = agreed && allIssuesConfirmed;
 
   async function handleSign() {
     setSigning(true);
@@ -79,7 +97,14 @@ export default function HandoverContractPage() {
             </div>
             <div className={styles.metaItem}>
               <span className={styles.metaLabel}>Borrower</span>
-              <span className={styles.metaValue}>{booking.borrower.name} {booking.borrower.surname}</span>
+              <span className={styles.metaValue}>
+                {booking.borrower.name} {booking.borrower.surname}
+                {(booking.borrower as any).idVerificationStatus === "verified" && (
+                  <span title="Identity verified" style={{ display: "inline-flex", alignItems: "center", gap: 3, marginLeft: 6, color: "#22c55e", fontSize: "0.75rem", fontWeight: 600 }}>
+                    <ShieldCheck size={13} /> Verified
+                  </span>
+                )}
+              </span>
             </div>
             <div className={styles.metaItem}>
               <span className={styles.metaLabel}>Period</span>
@@ -92,6 +117,57 @@ export default function HandoverContractPage() {
           </div>
         </div>
 
+        {/* Pre-existing issues section */}
+        {issues.length > 0 ? (
+          <div className={issueStyles.issuesSection}>
+            <div className={issueStyles.issuesSectionHeader}>
+              <AlertTriangle size={16} className={issueStyles.issuesIcon} />
+              <div>
+                <p className={issueStyles.issuesSectionTitle}>
+                  {issues.length} Pre-existing Issue{issues.length !== 1 ? "s" : ""} Logged by Borrower
+                </p>
+                <p className={issueStyles.issuesSectionSub}>
+                  Review each issue and check the box to confirm you have seen it before handing over the item.
+                </p>
+              </div>
+            </div>
+            <div className={issueStyles.issuesList}>
+              {issues.map((issue, i) => (
+                <label key={issue.id} className={`${issueStyles.issueRow} ${confirmedIssues.has(issue.id) ? issueStyles.issueRowChecked : ""}`}>
+                  <input
+                    type="checkbox"
+                    className={issueStyles.issueCheckbox}
+                    checked={confirmedIssues.has(issue.id)}
+                    onChange={() => !signed && toggleIssue(issue.id)}
+                    disabled={signed}
+                  />
+                  <div className={issueStyles.issueContent}>
+                    <span className={issueStyles.issueLabel}>Issue {i + 1}</span>
+                    <p className={issueStyles.issueDescription}>{issue.description}</p>
+                    {issue.photos.length > 0 && (
+                      <div className={issueStyles.photoGrid}>
+                        {issue.photos.map((url, j) => (
+                          <img key={j} src={url} alt={`Issue ${i + 1} photo ${j + 1}`} className={issueStyles.photo} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </div>
+            {!signed && !allIssuesConfirmed && (
+              <p className={issueStyles.issuesWarning}>
+                Please confirm all issues above before you can sign the handover agreement.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className={issueStyles.noIssuesBanner}>
+            <CheckCircle size={16} />
+            The borrower has not logged any pre-existing issues.
+          </div>
+        )}
+
         <div className={styles.contractCard}>
           <div className={styles.contractHeader}>
             <FileText size={16} />
@@ -103,7 +179,7 @@ export default function HandoverContractPage() {
               <p className={styles.contractText}>
                 This agreement is between <strong>{booking.listing.owner.name} {booking.listing.owner.surname}</strong> ("Owner")
                 and <strong>{booking.borrower.name} {booking.borrower.surname}</strong> ("Borrower")
-                for the rental of the item described below via the LendMe platform.
+                for the rental of the item described below via the ToolShare platform.
               </p>
             </div>
             <hr className={styles.contractDivider} />
@@ -125,7 +201,16 @@ export default function HandoverContractPage() {
             </div>
             <hr className={styles.contractDivider} />
             <div className={styles.contractSection}>
-              <p className={styles.contractSectionTitle}>4. Owner's Representations</p>
+              <p className={styles.contractSectionTitle}>4. Pre-existing Condition</p>
+              <p className={styles.contractText}>
+                {issues.length > 0
+                  ? `Both parties acknowledge that ${issues.length} pre-existing issue${issues.length !== 1 ? "s have" : " has"} been documented above prior to handover. The Borrower shall not be held responsible for these specific documented issues upon return.`
+                  : "No pre-existing issues have been documented. The Borrower accepts the item in its current condition."}
+              </p>
+            </div>
+            <hr className={styles.contractDivider} />
+            <div className={styles.contractSection}>
+              <p className={styles.contractSectionTitle}>5. Owner's Representations</p>
               <p className={styles.contractText}>
                 By signing, the Owner confirms that:
               </p>
@@ -138,26 +223,26 @@ export default function HandoverContractPage() {
               </p>
               <p className={styles.contractText}>
                 (c) The Owner will physically hand the item over to the Borrower and allow the Borrower to sign
-                the receipt confirmation within the LendMe platform.
+                the receipt confirmation within the ToolShare platform.
               </p>
             </div>
             <hr className={styles.contractDivider} />
             <div className={styles.contractSection}>
-              <p className={styles.contractSectionTitle}>5. Liability & Damage</p>
+              <p className={styles.contractSectionTitle}>6. Liability & Damage</p>
               <p className={styles.contractText}>
                 The Borrower is responsible for any loss, theft, or damage to the item beyond normal wear and
                 tear during the rental period. A security deposit of{" "}
                 <strong>{booking.depositAmount ? fmtMoney(booking.depositAmount) : "N/A"}</strong> is held in
                 escrow and will be returned within 48 hours of confirmed completion, subject to any dispute raised
-                via the LendMe platform.
+                via the ToolShare platform.
               </p>
             </div>
             <hr className={styles.contractDivider} />
             <div className={styles.contractSection}>
-              <p className={styles.contractSectionTitle}>6. Governing Terms</p>
+              <p className={styles.contractSectionTitle}>7. Governing Terms</p>
               <p className={styles.contractText}>
-                This agreement is subject to LendMe's Terms of Service and Rental Policy. Any disputes will first
-                be mediated through the LendMe disputes process before any other forum.
+                This agreement is subject to ToolShare's Terms of Service and Rental Policy. Any disputes will first
+                be mediated through the ToolShare disputes process before any other forum.
               </p>
             </div>
           </div>
@@ -196,7 +281,7 @@ export default function HandoverContractPage() {
             <div className={styles.btnRow}>
               <button
                 className={styles.btnSign}
-                disabled={!agreed || signing}
+                disabled={!canSign || signing}
                 onClick={handleSign}
               >
                 {signing ? "Signing…" : "Sign & Hand Over"}
