@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createListing, listListings } from "@/lib/services/listing.services";
+import { db } from "@/lib/db/client";
 import type { ListingCategory, ListingFilters } from "@/lib/types/listing";
 
 // ─── GET /api/listings ──────────────────────────────────────────────────────
@@ -45,6 +46,17 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorised." }, { status: 401 });
+    }
+
+    const owner = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { idVerificationStatus: true },
+    });
+    if (owner?.idVerificationStatus !== "verified") {
+      return NextResponse.json(
+        { error: "Your identity must be verified before you can create a listing." },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

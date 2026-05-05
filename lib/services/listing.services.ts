@@ -72,6 +72,13 @@ export async function createListing(ownerId: string, data: CreateListingInput) {
       latitude:          data.latitude   ?? null,
       longitude:         data.longitude  ?? null,
 
+      quantity:          data.quantity       ?? 1,
+      currentValue:      data.currentValue  ?? null,
+      itemInsured:       data.itemInsured   ?? false,
+      make:              data.make          ?? null,
+      model:             data.model         ?? null,
+      size:              data.size          ?? null,
+
       deliveryAvailable: data.deliveryAvailable ?? false,
       deliveryRadius:    data.deliveryRadius ?? null,
       deliveryFee:       data.deliveryFee    ?? null,
