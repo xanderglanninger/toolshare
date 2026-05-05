@@ -260,11 +260,11 @@ export default function InvoicePage({ params }: { params: Promise<{ bookingId: s
         {/* Footer */}
         <footer className={styles.docFooter}>
           <p className={styles.footerThanks}>
-            Thank you for using LendMe. The deposit will be refunded once the item is returned in its original condition.
+            Thank you for using ToolShare. The deposit will be refunded once the item is returned in its original condition.
           </p>
           <div className={styles.footerRule} />
           <div className={styles.footerBottom}>
-            <span className={styles.footerBrand}>lendme.co.za</span>
+            <span className={styles.footerBrand}>toolshare.co.za</span>
             <span className={styles.footerNote}>This document was generated automatically and serves as proof of transaction.</span>
           </div>
         </footer>

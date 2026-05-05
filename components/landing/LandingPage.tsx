@@ -379,7 +379,7 @@ export default function LandingPage() {
 
           <div className={styles.heroBottom}>
             <p className={styles.heroSub}>
-              lendme connects people who need gear with people who have it —
+              ToolShare connects people who need gear with people who have it —
               cameras, tools, bikes, music equipment, and more. No middleman,
               no markups.
             </p>
@@ -578,7 +578,7 @@ export default function LandingPage() {
           </nav>
         </div>
         <div className={styles.footerBottom}>
-          <span>© 2026 lendme. All rights reserved.</span>
+          <span>© 2026 ToolShare. All rights reserved.</span>
           <span className={styles.footerMade}>
             Made with <Heart size={12} fill="currentColor" style={{ color: "#ef4444" }} /> for makers everywhere.
           </span>

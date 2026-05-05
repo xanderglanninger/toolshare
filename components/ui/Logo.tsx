@@ -83,8 +83,8 @@ export default function Logo({ size = "md", variant = "light", className }: Logo
           color: textColor,
         }}
       >
-        lend
-        <span style={{ color: "#f5a800" }}>me</span>
+        Tool
+        <span style={{ color: "#f5a800" }}>share</span>
       </span>
     </div>
   );

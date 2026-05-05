@@ -1,4 +1,4 @@
-# LendMe — Equipment Lending Platform
+# ToolShare — Equipment Lending Platform
 
 A Next.js marketplace for listing and borrowing construction equipment.
 
