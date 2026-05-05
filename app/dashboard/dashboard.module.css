@@ -64,6 +64,25 @@
 
 .navItem:hover { background: #1c1a17; color: #c8bfad; }
 
+.adminNav {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #2a2720;
+}
+
+.adminNavLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f5a800;
+  padding: 0 12px;
+  margin-bottom: 6px;
+}
+
+.adminNavItem { color: #6a6050; }
+.adminNavItem:hover { background: rgba(245,168,0,0.06); color: #c8bfad; }
+
 .navActive {
   background: rgba(245,168,0,0.1) !important;
   color: #f5a800 !important;
@@ -215,8 +234,10 @@
 
 .topbarRight { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 
-.topbarGreeting { font-size: 13px; color: var(--text-3); }
+.topbarGreeting { font-size: 13px; color: var(--text-3); display: flex; align-items: center; gap: 5px; }
 .topbarGreeting strong { color: var(--text-1); font-weight: 600; }
+
+.verifiedBadge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 0; }
 
 /* ─── Topbar avatar + dropdown wrapper ───────────── */
 .avatarWrap {
@@ -298,7 +319,8 @@
 
 .dropdownName {
   font-size: 13px; font-weight: 600; color: var(--text-1);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; align-items: center; gap: 5px;
+  overflow: hidden;
 }
 
 .dropdownEmail {

@@ -8,6 +8,14 @@ import Logo from "@/components/ui/Logo";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DashboardProvider, useDashboard } from "./context";
 import Spinner from "@/components/ui/Spinner";
+import VerificationGateModal from "@/components/ui/VerificationGateModal";
+
+const ADMIN_NAV = [
+  { id: "stats",   path: "/dashboard/admin/stats",   label: "Statistics",        icon: "▦" },
+  { id: "kyc",     path: "/dashboard/admin/kyc",     label: "KYC Verifications", icon: "◈" },
+  { id: "users",   path: "/dashboard/admin/users",   label: "User Management",   icon: "◉" },
+  { id: "disputes",path: "/dashboard/admin/disputes",label: "Disputes",          icon: "⚑" },
+];
 
 const NAV = [
   { id: "picks",         path: "/dashboard",               label: "Today's Picks",  icon: "✦" },
@@ -17,19 +25,37 @@ const NAV = [
   { id: "statistics",    path: "/dashboard/statistics",    label: "Statistics",     icon: "▦" },
 ];
 
+function VerifiedBadge() {
+  return (
+    <svg
+      className={styles.verifiedBadge}
+      width="24" height="20" viewBox="0 1 24 17"
+      fill="none" aria-label="Verified"
+    >
+      <path
+        d="M12 2l2.4 4.8 5.3.8-3.85 3.75.9 5.3L12 14.1l-4.75 2.55.9-5.3L4.3 7.6l5.3-.8L12 2z"
+        fill="#f5a800" stroke="#f5a800" strokeWidth="1" strokeLinejoin="round"
+      />
+      <path d="M9.5 10l2 2 3.5-3.5" stroke="#1c1a17" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { userImage, setUserImage, notifUnread, setNotifUnread } = useDashboard();
+  const { userImage, notifUnread, setNotifUnread, idVerificationStatus, setIdVerificationStatus, isAdmin } = useDashboard();
 
   const [sideOpen, setSideOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [showGate, setShowGate] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const firstName = session?.user?.name?.split(" ")[0] ?? "there";
-  const initials = firstName[0]?.toUpperCase() ?? "?";
+  const firstName  = session?.user?.name?.split(" ")[0] ?? "there";
+  const initials   = firstName[0]?.toUpperCase() ?? "?";
+  const isVerified = idVerificationStatus === "verified";
 
   function isActive(path: string) {
     if (path === "/dashboard") return pathname === "/dashboard";
@@ -46,9 +72,25 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     setNotifUnread(0);
     if (tab === "messages" && linkData) {
       router.push(`/dashboard/messages?thread=${linkData}`);
+    } else if (tab === "bookings" && linkData) {
+      try {
+        const parsed = JSON.parse(linkData);
+        if (parsed.bookingId) { router.push(`/dashboard/bookings/${parsed.bookingId}/wizard`); return; }
+      } catch { /* plain bookingId */ }
+      router.push(`/dashboard/bookings/${linkData}/wizard`);
     } else {
       router.push(`/dashboard/${tab}`);
     }
+  }
+
+  function handleFab() {
+    if (!isVerified) { setShowGate(true); return; }
+    navigate("/dashboard/create");
+  }
+
+  function handleGateSubmitted() {
+    setIdVerificationStatus("pending");
+    setShowGate(false);
   }
 
   return (
@@ -73,8 +115,23 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               </button>
             ))}
           </nav>
-        </div>
 
+          {isAdmin && (
+            <div className={styles.adminNav}>
+              <p className={styles.adminNavLabel}>Admin</p>
+              {ADMIN_NAV.map((item) => (
+                <button
+                  key={item.id}
+                  className={`${styles.navItem} ${styles.adminNavItem}${isActive(item.path) ? " " + styles.navActive : ""}`}
+                  onClick={() => navigate(item.path)}
+                >
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navLabel}>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </aside>
 
       {sideOpen && <div className={styles.overlay} onClick={() => setSideOpen(false)} />}
@@ -84,7 +141,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <header className={styles.topbar}>
           <button className={styles.menuBtn} onClick={() => setSideOpen(true)}>☰</button>
           <div className={styles.topbarRight}>
-            <span className={styles.topbarGreeting}>Hey, <strong>{firstName}</strong></span>
+            <span className={styles.topbarGreeting}>
+              Hey, <strong>{firstName}</strong>
+              {isVerified && <VerifiedBadge />}
+            </span>
 
             <NotificationBell onNavigate={handleNotifNavigate} />
 
@@ -108,7 +168,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                         : initials}
                     </div>
                     <div className={styles.dropdownMeta}>
-                      <span className={styles.dropdownName}>{session?.user?.name ?? "User"}</span>
+                      <span className={styles.dropdownName}>
+                        {session?.user?.name ?? "User"}
+                        {isVerified && <VerifiedBadge />}
+                      </span>
                       <span className={styles.dropdownEmail}>{session?.user?.email ?? ""}</span>
                     </div>
                   </div>
@@ -137,12 +200,20 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         <button
           className={styles.createFab}
-          onClick={() => navigate("/dashboard/create")}
+          onClick={handleFab}
           aria-label="Create listing"
         >
           ＋
         </button>
       </main>
+
+      {showGate && (
+        <VerificationGateModal
+          status={idVerificationStatus}
+          onClose={() => setShowGate(false)}
+          onSubmitted={handleGateSubmitted}
+        />
+      )}
 
     </div>
   );

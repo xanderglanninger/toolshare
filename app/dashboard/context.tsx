@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useSession } from "next-auth/react";
 
 type DashboardCtx = {
   userImage: string | null;
@@ -9,15 +10,22 @@ type DashboardCtx = {
   toggleTheme: () => void;
   notifUnread: number;
   setNotifUnread: (n: number) => void;
+  idVerificationStatus: string;
+  setIdVerificationStatus: (s: string) => void;
+  isAdmin: boolean;
 };
 
 const DashboardContext = createContext<DashboardCtx>({} as DashboardCtx);
 export const useDashboard = () => useContext(DashboardContext);
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
+  const { data: session } = useSession();
   const [userImage, setUserImage] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [notifUnread, setNotifUnread] = useState(0);
+  const [idVerificationStatus, setIdVerificationStatus] = useState("unverified");
+
+  const isAdmin = session?.user?.role === "ADMIN";
 
   useEffect(() => {
     try {
@@ -29,7 +37,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
-      .then((j) => { if (j.data?.image) setUserImage(j.data.image); })
+      .then((j) => {
+        if (j.data?.image) setUserImage(j.data.image);
+        if (j.data?.idVerificationStatus) setIdVerificationStatus(j.data.idVerificationStatus);
+      })
       .catch(() => {});
   }, []);
 
@@ -57,7 +68,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <DashboardContext.Provider value={{ userImage, setUserImage, theme, toggleTheme, notifUnread, setNotifUnread }}>
+    <DashboardContext.Provider value={{
+      userImage, setUserImage,
+      theme, toggleTheme,
+      notifUnread, setNotifUnread,
+      idVerificationStatus, setIdVerificationStatus,
+      isAdmin,
+    }}>
       {children}
     </DashboardContext.Provider>
   );
