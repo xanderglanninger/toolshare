@@ -19,13 +19,23 @@ type Props = {
 };
 
 const TYPE_ICONS: Record<string, string> = {
-  BOOKING_REQUEST:   "◷",
-  BOOKING_CONFIRMED: "✓",
-  BOOKING_CANCELLED: "✕",
-  BOOKING_COMPLETED: "★",
-  NEW_MESSAGE:       "◻",
-  NEW_REVIEW:        "◈",
-  PAYMENT_RECEIVED:  "◎",
+  BOOKING_REQUEST:          "◷",
+  BOOKING_CONFIRMED:        "✓",
+  BOOKING_CANCELLED:        "✕",
+  BOOKING_COMPLETED:        "★",
+  NEW_MESSAGE:              "◻",
+  NEW_REVIEW:               "◈",
+  PAYMENT_RECEIVED:         "◎",
+  DISPUTE_OPENED:           "⚠",
+  DISPUTE_RESOLVED:         "◉",
+  DEPOSIT_RETURNED:         "↩",
+  FUNDS_RELEASED:           "↗",
+  HANDOVER_SIGNED:          "✎",
+  RECEIPT_SIGNED:           "✎",
+  CANCEL_RETURN_REQUESTED:  "◁",
+  CANCEL_RETURN_DENIED:     "⊘",
+  ISSUES_LOGGED:            "◬",
+  RENTAL_UPDATE:            "◈",
 };
 
 function timeAgo(dateStr: string) {

@@ -322,6 +322,10 @@ model Payment {
   refundedAmount        Float?
   stripeRefundId        String?
 
+  // PayFast
+  provider              String        @default("STRIPE")
+  payfastPaymentId      String?
+
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 }

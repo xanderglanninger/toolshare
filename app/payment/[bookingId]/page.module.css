@@ -521,8 +521,200 @@
 .simBtn:active:not(:disabled) { transform: translateY(0); }
 .simBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ─── Payment method selector ───────────────────── */
+.methodSelector {
+  margin-bottom: 20px;
+}
+
+.methodSelectorTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5a5448;
+  margin-bottom: 10px;
+}
+
+.methodOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.methodOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #141210;
+  border: 1px solid #2e2b24;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+}
+
+.methodOption:hover {
+  border-color: #5a5448;
+  background: #1a1814;
+}
+
+.methodOptionActive {
+  border-color: #f5a800 !important;
+  background: #1c1a17 !important;
+}
+
+.methodOptionIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.methodOptionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.methodOptionName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f5f0e8;
+}
+
+.methodOptionSub {
+  font-size: 11px;
+  color: #7a7060;
+}
+
+.methodOptionCheck {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f5a800;
+  flex-shrink: 0;
+}
+
+/* ─── PayFast card ──────────────────────────────── */
+.payfastCard {
+  background: #141210;
+  border: 1px solid #2e2b24;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.payfastHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.payfastLogo {
+  height: 24px;
+  width: auto;
+}
+
+.payfastBadge {
+  background: #1a2a1a;
+  color: #86efac;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #166534;
+}
+
+.payfastSub {
+  font-size: 13px;
+  color: #7a7060;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.payfastMethods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.payfastMethod {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1c1a17;
+  border: 1px solid #2e2b24;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #c8bfad;
+}
+
+.payfastBtn {
+  width: 100%;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+.payfastBtn:hover:not(:disabled) { background: #0069d9; transform: translateY(-1px); }
+.payfastBtn:active:not(:disabled) { transform: translateY(0); }
+.payfastBtn:disabled { background: #2e2b24; color: #5a5448; cursor: not-allowed; }
+
+/* ─── PayFast processing ────────────────────────── */
+.payfastProcessing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  gap: 16px;
+}
+
+.payfastSpinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #2e2b24;
+  border-top-color: #f5a800;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.payfastProcessingTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f5f0e8;
+}
+
+.payfastProcessingSub {
+  font-size: 13px;
+  color: #7a7060;
+  max-width: 320px;
+  line-height: 1.6;
+}
+
 /* ─── Responsive ────────────────────────────────── */
 @media (max-width: 600px) {
   .body { padding: 24px 16px; }
   .fieldRow { grid-template-columns: 1fr; }
+  .payfastMethods { grid-template-columns: 1fr; }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { loadStripe } from "@stripe/stripe-js";
@@ -16,8 +16,8 @@ import type { BookingWithDetails } from "@/lib/types";
 import Logo from "@/components/ui/Logo";
 
 const TEST_MODE = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true";
+const PAYFAST_ENABLED = process.env.NEXT_PUBLIC_PAYFAST_ENABLED === "true";
 
-// Only initialise Stripe when a real-looking key is present
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 const stripePromise =
   stripeKey && stripeKey !== "pk_test_..." ? loadStripe(stripeKey) : null;
@@ -63,6 +63,118 @@ function formatDate(d: Date | string) {
 
 function daysBetween(start: Date | string, end: Date | string) {
   return Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
+}
+
+// ── PayFast checkout ──────────────────────────────────────────────────────────
+
+function PayFastCheckoutForm({
+  booking,
+  forDeposit = false,
+  onInitiated,
+}: {
+  booking: BookingWithDetails;
+  forDeposit?: boolean;
+  onInitiated?: () => void;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const amount = forDeposit ? (booking.depositAmount ?? 0) : booking.totalAmount;
+
+  async function handlePayFast() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/payments/payfast/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: booking.id, forDeposit }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to initiate payment");
+
+      const { params, url } = json.data as {
+        params: Record<string, string>;
+        url: string;
+      };
+
+      // Build a hidden form and submit it to PayFast
+      const form = formRef.current!;
+      form.action = url;
+      form.method = "POST";
+      // Clear any previous inputs
+      form.innerHTML = "";
+      for (const [key, value] of Object.entries(params)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      }
+      onInitiated?.();
+      form.submit();
+    } catch (e: any) {
+      setError(e.message ?? "Something went wrong");
+      setLoading(false);
+    }
+  }
+
+  const methods = [
+    { icon: "💳", label: "Credit / Debit card" },
+    { icon: "🏦", label: "Instant EFT" },
+    { icon: "📱", label: "SnapScan" },
+    { icon: "🛒", label: "Mobicred" },
+    { icon: "🔢", label: "SCode" },
+  ];
+
+  return (
+    <>
+      <form ref={formRef} style={{ display: "none" }} />
+
+      <div className={styles.payfastCard}>
+        <div className={styles.payfastHeader}>
+          <img
+            src="https://www.payfast.co.za/images/logo.svg"
+            alt="PayFast"
+            className={styles.payfastLogo}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+          <span className={styles.payfastBadge}>Secure checkout</span>
+        </div>
+
+        <p className={styles.payfastSub}>
+          Pay via PayFast — South Africa's most trusted payment gateway. Multiple methods accepted:
+        </p>
+
+        <div className={styles.payfastMethods}>
+          {methods.map((m) => (
+            <div key={m.label} className={styles.payfastMethod}>
+              <span>{m.icon}</span>
+              <span>{m.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {error && <div className={styles.errorBox}>{error}</div>}
+
+        <div className={styles.secureNote}>
+          🔒 You will be redirected to PayFast to complete payment
+        </div>
+
+        <button
+          className={styles.payfastBtn}
+          disabled={loading}
+          onClick={handlePayFast}
+          type="button"
+        >
+          {loading ? "Redirecting…" : `Pay ${fmt(amount)} with PayFast`}
+        </button>
+      </div>
+    </>
+  );
 }
 
 // ── Stripe checkout form (must be inside <Elements>) ──────────────────────────
@@ -140,9 +252,11 @@ function CheckoutForm({
 
 function DepositCheckoutForm({
   booking,
+  provider,
   onSuccess,
 }: {
   booking: BookingWithDetails;
+  provider: "stripe" | "payfast";
   onSuccess: () => void;
 }) {
   const stripe   = useStripe();
@@ -179,6 +293,16 @@ function DepositCheckoutForm({
     }
 
     setPaying(false);
+  }
+
+  if (provider === "payfast") {
+    return (
+      <PayFastCheckoutForm
+        booking={booking}
+        forDeposit
+        onInitiated={() => {}}
+      />
+    );
   }
 
   return (
@@ -279,6 +403,98 @@ function TestPaymentPanel({
   );
 }
 
+// ── PayFast return polling panel ──────────────────────────────────────────────
+
+function PayFastProcessing({ bookingId }: { bookingId: string }) {
+  const router = useRouter();
+  const [dots, setDots] = useState(".");
+
+  useEffect(() => {
+    const dotInterval = setInterval(() => setDots((d) => (d.length >= 3 ? "." : d + ".")), 500);
+    return () => clearInterval(dotInterval);
+  }, []);
+
+  useEffect(() => {
+    // Poll booking status every 2s for up to 30s
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      try {
+        const r = await fetch(`/api/bookings/${bookingId}`);
+        const json = await r.json();
+        if (json.data?.status === "CONFIRMED") {
+          clearInterval(poll);
+          router.replace(`/payment/${bookingId}?payfast_confirmed=1`);
+        }
+      } catch {}
+      if (attempts >= 15) clearInterval(poll);
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [bookingId, router]);
+
+  return (
+    <div className={styles.payfastProcessing}>
+      <div className={styles.payfastSpinner} />
+      <p className={styles.payfastProcessingTitle}>Confirming your payment{dots}</p>
+      <p className={styles.payfastProcessingSub}>
+        Please wait while we verify your PayFast payment. This usually takes a few seconds.
+      </p>
+    </div>
+  );
+}
+
+// ── Payment method selector ───────────────────────────────────────────────────
+
+type PayMethod = "payfast" | "stripe";
+
+function MethodSelector({
+  selected,
+  onChange,
+  hasStripe,
+  hasPayFast,
+}: {
+  selected: PayMethod;
+  onChange: (m: PayMethod) => void;
+  hasStripe: boolean;
+  hasPayFast: boolean;
+}) {
+  if (!hasStripe && !hasPayFast) return null;
+  if (!hasStripe || !hasPayFast) return null; // Only show selector when both are available
+
+  return (
+    <div className={styles.methodSelector}>
+      <p className={styles.methodSelectorTitle}>Choose payment method</p>
+      <div className={styles.methodOptions}>
+        <button
+          type="button"
+          className={`${styles.methodOption} ${selected === "payfast" ? styles.methodOptionActive : ""}`}
+          onClick={() => onChange("payfast")}
+        >
+          <span className={styles.methodOptionIcon}>🇿🇦</span>
+          <div className={styles.methodOptionInfo}>
+            <span className={styles.methodOptionName}>PayFast</span>
+            <span className={styles.methodOptionSub}>EFT · Card · SnapScan · Mobicred</span>
+          </div>
+          {selected === "payfast" && <span className={styles.methodOptionCheck}>✓</span>}
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.methodOption} ${selected === "stripe" ? styles.methodOptionActive : ""}`}
+          onClick={() => onChange("stripe")}
+        >
+          <span className={styles.methodOptionIcon}>💳</span>
+          <div className={styles.methodOptionInfo}>
+            <span className={styles.methodOptionName}>Card (Stripe)</span>
+            <span className={styles.methodOptionSub}>Visa · Mastercard · Amex</span>
+          </div>
+          {selected === "stripe" && <span className={styles.methodOptionCheck}>✓</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function PaymentPage({ params }: { params: Promise<{ bookingId: string }> }) {
@@ -294,6 +510,16 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
   const [depositPaid, setDepositPaid]                 = useState(false);
   const [intentError, setIntentError]                 = useState("");
   const [success, setSuccess]                         = useState<{ paymentReference: string } | null>(null);
+  const [payMethod, setPayMethod]                     = useState<PayMethod>("payfast");
+
+  const hasPayFast = PAYFAST_ENABLED;
+  const hasStripe  = Boolean(stripePromise);
+
+  // Default to Stripe if PayFast is not enabled
+  useEffect(() => {
+    if (!hasPayFast && hasStripe) setPayMethod("stripe");
+    else if (hasPayFast) setPayMethod("payfast");
+  }, [hasPayFast, hasStripe]);
 
   // Fetch booking
   useEffect(() => {
@@ -307,7 +533,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
       .finally(() => setLoading(false));
   }, [bookingId]);
 
-  // Create (or reuse) PaymentIntents — only when Stripe is configured
+  // Create (or reuse) Stripe PaymentIntents — only when Stripe is configured
   useEffect(() => {
     if (!booking || booking.status !== "PENDING" || !stripePromise) return;
     fetch("/api/payments/create-intent", {
@@ -329,8 +555,8 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
 
   // Handle Stripe redirect returns (3-D Secure flows)
   useEffect(() => {
-    const p       = new URLSearchParams(window.location.search);
-    const status  = p.get("redirect_status");
+    const p        = new URLSearchParams(window.location.search);
+    const status   = p.get("redirect_status");
     const intentId = p.get("payment_intent");
     if (status === "succeeded" && intentId) {
       fetch("/api/payments", {
@@ -346,6 +572,21 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
         .catch(() => {});
     }
   }, [bookingId]);
+
+  // ── PayFast return handling ────────────────────────────────────────────────
+  const searchParams = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+  const payfastProvider   = searchParams.get("provider") === "payfast";
+  const payfastCancelled  = payfastProvider && searchParams.get("cancelled") === "true";
+  const payfastConfirmed  = searchParams.get("payfast_confirmed") === "1";
+
+  // Show success when booking confirmed (via PayFast polling redirect)
+  useEffect(() => {
+    if (payfastConfirmed && booking?.status === "CONFIRMED" && booking.payment) {
+      setSuccess({ paymentReference: booking.payment.paymentReference ?? "payfast" });
+    }
+  }, [payfastConfirmed, booking]);
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
@@ -363,6 +604,36 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
       <div className={styles.page}>
         <Topbar />
         <div className={styles.loading}>Booking not found.</div>
+      </div>
+    );
+  }
+
+  // ── PayFast: user returned but payment still processing ───────────────────
+  if (payfastProvider && !payfastCancelled && !payfastConfirmed &&
+      booking.status !== "CONFIRMED") {
+    return (
+      <div className={styles.page}>
+        <Topbar />
+        <div className={styles.body}>
+          <PayFastProcessing bookingId={bookingId} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── PayFast: cancelled ────────────────────────────────────────────────────
+  if (payfastCancelled) {
+    return (
+      <div className={styles.page}>
+        <Topbar />
+        <div className={styles.successPage}>
+          <div className={styles.successIcon} style={{ borderColor: "#ef4444", background: "rgba(239,68,68,0.1)" }}>✕</div>
+          <h1 className={styles.successTitle}>Payment cancelled</h1>
+          <p className={styles.successSub}>Your PayFast payment was cancelled. No charge was made.</p>
+          <button className={styles.dashBtn} onClick={() => router.replace(`/payment/${bookingId}`)}>
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
@@ -407,10 +678,30 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
             <Elements stripe={stripePromise} options={{ clientSecret: depositClientSecret, appearance: stripeAppearance }}>
               <DepositCheckoutForm
                 booking={booking}
+                provider="stripe"
                 onSuccess={() => setDepositPaid(true)}
               />
             </Elements>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Rental paid via PayFast, deposit required ────────────────────────────
+  if (success && booking.depositAmount && !depositPaid && !depositClientSecret) {
+    return (
+      <div className={styles.page}>
+        <Topbar />
+        <div className={styles.body}>
+          <div className={styles.successPage} style={{ marginBottom: "1.5rem" }}>
+            <div className={styles.successIcon} style={{ background: "#c8a84b" }}>✓</div>
+            <h1 className={styles.successTitle}>Rental paid!</h1>
+            <p className={styles.successSub}>
+              Now pay the refundable deposit of <strong>{fmt(booking.depositAmount ?? 0)}</strong>.
+            </p>
+          </div>
+          <PayFastCheckoutForm booking={booking} forDeposit onInitiated={() => {}} />
         </div>
       </div>
     );
@@ -527,7 +818,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           </div>
         </div>
 
-        <div className={styles.escrowNotice ?? ""} style={{
+        <div style={{
           background: "#1c1a17", border: "1px solid #2e2b24", borderRadius: 8,
           padding: "0.75rem 1rem", fontSize: "0.82rem", color: "#c8a84b",
           marginBottom: "1rem", lineHeight: 1.5,
@@ -549,31 +840,56 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           />
         )}
 
-        {/* Stripe payment form — shown when Stripe is configured */}
+        {/* Payment method selector (when both PayFast and Stripe are available) */}
         {!TEST_MODE && (
-          intentError ? (
-            <div className={styles.errorBox}>{intentError}</div>
-          ) : stripePromise && clientSecret ? (
-            <Elements stripe={stripePromise} options={{ clientSecret, appearance: stripeAppearance }}>
-              <CheckoutForm
+          <>
+            <MethodSelector
+              selected={payMethod}
+              onChange={setPayMethod}
+              hasStripe={hasStripe}
+              hasPayFast={hasPayFast}
+            />
+
+            {/* PayFast */}
+            {payMethod === "payfast" && hasPayFast && (
+              <PayFastCheckoutForm
                 booking={booking}
-                onSuccess={(ref) => setSuccess({ paymentReference: ref })}
+                onInitiated={() => {}}
               />
-            </Elements>
-          ) : stripePromise ? (
-            <div className={styles.formCard}>
-              <p className={styles.formTitle}>Card details</p>
-              <div className={styles.formLoading}>Loading payment details…</div>
-            </div>
-          ) : (
-            <div className={styles.errorBox}>
-              Stripe is not configured. Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> or enable{" "}
-              <code>NEXT_PUBLIC_PAYMENT_TEST_MODE=true</code> in your environment.
-            </div>
-          )
+            )}
+
+            {/* Stripe */}
+            {payMethod === "stripe" && (
+              intentError ? (
+                <div className={styles.errorBox}>{intentError}</div>
+              ) : stripePromise && clientSecret ? (
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: stripeAppearance }}>
+                  <CheckoutForm
+                    booking={booking}
+                    onSuccess={(ref) => setSuccess({ paymentReference: ref })}
+                  />
+                </Elements>
+              ) : stripePromise ? (
+                <div className={styles.formCard}>
+                  <p className={styles.formTitle}>Card details</p>
+                  <div className={styles.formLoading}>Loading payment details…</div>
+                </div>
+              ) : !hasPayFast ? (
+                <div className={styles.errorBox}>
+                  No payment method is configured. Set <code>NEXT_PUBLIC_PAYFAST_ENABLED=true</code>{" "}
+                  or <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
+                </div>
+              ) : null
+            )}
+
+            {/* PayFast only (Stripe not available) */}
+            {!hasStripe && hasPayFast && payMethod !== "payfast" && (
+              <PayFastCheckoutForm booking={booking} onInitiated={() => {}} />
+            )}
+          </>
         )}
 
-        {/* When test mode is ON, also offer Stripe if it's configured */}
+        {/* In test mode, also offer Stripe if configured */}
         {TEST_MODE && stripePromise && clientSecret && (
           <>
             <div className={styles.testDivider} style={{ marginTop: 8 }}>
