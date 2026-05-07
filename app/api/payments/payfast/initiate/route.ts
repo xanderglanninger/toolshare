@@ -85,8 +85,9 @@ export async function POST(req: NextRequest) {
   const firstName = nameParts[0] ?? "User";
   const lastName = nameParts[1] ?? firstName;
 
-  // Build PayFast params in the required order
-  const params: Record<string, string> = {
+  // Build PayFast params in the required order — omit empty strings so
+  // the signature and the form fields always match exactly.
+  const rawParams: Record<string, string> = {
     merchant_id: PAYFAST_MERCHANT_ID,
     merchant_key: PAYFAST_MERCHANT_KEY,
     return_url: `${baseUrl}/payment/${bookingId}?provider=payfast&type=${forDeposit ? "deposit" : "rental"}`,
@@ -101,6 +102,11 @@ export async function POST(req: NextRequest) {
     custom_str1: bookingId,
     custom_str2: forDeposit ? "deposit" : "rental",
   };
+
+  // Strip empty values — PayFast signature must match the fields actually sent
+  const params = Object.fromEntries(
+    Object.entries(rawParams).filter(([, v]) => v.trim() !== "")
+  );
 
   const signature = buildSignature(params, PAYFAST_PASSPHRASE);
   const finalParams = { ...params, signature };
