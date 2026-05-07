@@ -16,7 +16,6 @@ import type { BookingWithDetails } from "@/lib/types";
 import Logo from "@/components/ui/Logo";
 
 const TEST_MODE = process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === "true";
-const PAYFAST_ENABLED = process.env.NEXT_PUBLIC_PAYFAST_ENABLED === "true";
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
 const stripePromise =
@@ -512,7 +511,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
   const [success, setSuccess]                         = useState<{ paymentReference: string } | null>(null);
   const [payMethod, setPayMethod]                     = useState<PayMethod>("payfast");
 
-  const hasPayFast = PAYFAST_ENABLED;
+  const hasPayFast = true; // always offer PayFast; initiate API returns 503 if not configured
   const hasStripe  = Boolean(stripePromise);
 
   // Default to Stripe if PayFast is not enabled
