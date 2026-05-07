@@ -832,77 +832,71 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           )}
         </div>
 
-        {/* Test mode panel */}
-        {TEST_MODE && (
-          <TestPaymentPanel
+        {/* Payment method selector */}
+        <MethodSelector
+          selected={payMethod}
+          onChange={setPayMethod}
+          hasStripe={hasStripe || TEST_MODE}
+          hasPayFast={hasPayFast}
+        />
+
+        {/* PayFast */}
+        {payMethod === "payfast" && hasPayFast && (
+          <PayFastCheckoutForm
             booking={booking}
-            onSuccess={(ref) => setSuccess({ paymentReference: ref })}
+            onInitiated={() => {}}
           />
         )}
 
-        {/* Payment method selector (when both PayFast and Stripe are available) */}
-        {!TEST_MODE && (
+        {/* Stripe / Test mode */}
+        {payMethod === "stripe" && (
           <>
-            <MethodSelector
-              selected={payMethod}
-              onChange={setPayMethod}
-              hasStripe={hasStripe}
-              hasPayFast={hasPayFast}
-            />
-
-            {/* PayFast */}
-            {payMethod === "payfast" && hasPayFast && (
-              <PayFastCheckoutForm
+            {TEST_MODE && (
+              <TestPaymentPanel
                 booking={booking}
-                onInitiated={() => {}}
+                onSuccess={(ref) => setSuccess({ paymentReference: ref })}
               />
             )}
 
-            {/* Stripe */}
-            {payMethod === "stripe" && (
-              intentError ? (
-                <div className={styles.errorBox}>{intentError}</div>
-              ) : stripePromise && clientSecret ? (
+            {stripePromise && clientSecret && (
+              <>
+                {TEST_MODE && (
+                  <div className={styles.testDivider} style={{ marginTop: 8 }}>
+                    <span>or pay with real test card via Stripe</span>
+                  </div>
+                )}
                 <Elements stripe={stripePromise} options={{ clientSecret, appearance: stripeAppearance }}>
                   <CheckoutForm
                     booking={booking}
                     onSuccess={(ref) => setSuccess({ paymentReference: ref })}
                   />
                 </Elements>
-              ) : stripePromise ? (
-                <div className={styles.formCard}>
-                  <p className={styles.formTitle}>Card details</p>
-                  <div className={styles.formLoading}>Loading payment details…</div>
-                </div>
-              ) : !hasPayFast ? (
-                <div className={styles.errorBox}>
-                  No payment method is configured. Set <code>NEXT_PUBLIC_PAYFAST_ENABLED=true</code>{" "}
-                  or <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
-                </div>
-              ) : null
+              </>
             )}
 
-            {/* PayFast only (Stripe not available) */}
-            {!hasStripe && hasPayFast && payMethod !== "payfast" && (
-              <PayFastCheckoutForm booking={booking} onInitiated={() => {}} />
+            {!TEST_MODE && !stripePromise && !hasPayFast && (
+              <div className={styles.errorBox}>
+                No payment method is configured. Set <code>NEXT_PUBLIC_PAYFAST_ENABLED=true</code>{" "}
+                or <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
+              </div>
             )}
+
+            {!TEST_MODE && stripePromise && !clientSecret && !intentError && (
+              <div className={styles.formCard}>
+                <p className={styles.formTitle}>Card details</p>
+                <div className={styles.formLoading}>Loading payment details…</div>
+              </div>
+            )}
+
+            {intentError && <div className={styles.errorBox}>{intentError}</div>}
           </>
         )}
 
-        {/* In test mode, also offer Stripe if configured */}
-        {TEST_MODE && stripePromise && clientSecret && (
-          <>
-            <div className={styles.testDivider} style={{ marginTop: 8 }}>
-              <span>or pay with real test card via Stripe</span>
-            </div>
-            <Elements stripe={stripePromise} options={{ clientSecret, appearance: stripeAppearance }}>
-              <CheckoutForm
-                booking={booking}
-                onSuccess={(ref) => setSuccess({ paymentReference: ref })}
-              />
-            </Elements>
-          </>
+        {/* Fallback: PayFast only, no Stripe at all */}
+        {!hasStripe && !TEST_MODE && hasPayFast && payMethod !== "payfast" && (
+          <PayFastCheckoutForm booking={booking} onInitiated={() => {}} />
         )}
+
       </div>
     </div>
   );
