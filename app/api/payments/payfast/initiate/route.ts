@@ -111,5 +111,7 @@ export async function POST(req: NextRequest) {
   const signature = buildSignature(params, PAYFAST_PASSPHRASE);
   const finalParams = { ...params, signature };
 
+  console.log("[PayFast] notify_url:", params.notify_url, "| return_url:", params.return_url);
+
   return NextResponse.json({ data: { params: finalParams, url: PAYFAST_BASE_URL } });
 }
