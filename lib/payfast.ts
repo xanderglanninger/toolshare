@@ -31,14 +31,25 @@ export function buildSignature(
   return crypto.createHash("md5").update(str).digest("hex");
 }
 
-// Verify an incoming ITN signature. Params must be in received order.
+// Verify an incoming ITN signature.
+// PayFast includes ALL fields (even empty strings) in the ITN signature —
+// do NOT filter empty values here, unlike the outbound buildSignature.
 export function verifyITNSignature(
   params: Record<string, string>,
   passphrase: string | null = null
 ): boolean {
   const { signature, ...rest } = params;
   if (!signature) return false;
-  const expected = buildSignature(rest, passphrase);
+
+  const parts = Object.entries(rest).map(
+    ([k, v]) => `${k}=${encodeURIComponent(v.trim()).replace(/%20/g, "+")}`
+  );
+  let str = parts.join("&");
+  if (passphrase) {
+    str += `&passphrase=${encodeURIComponent(passphrase.trim()).replace(/%20/g, "+")}`;
+  }
+
+  const expected = crypto.createHash("md5").update(str).digest("hex");
   return signature === expected;
 }
 
