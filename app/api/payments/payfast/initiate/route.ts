@@ -11,6 +11,8 @@ import {
 } from "@/lib/payfast";
 
 export async function POST(req: NextRequest) {
+  console.log("[PayFast] sandbox:", process.env.PAYFAST_SANDBOX, "| url:", PAYFAST_BASE_URL, "| merchant_id:", PAYFAST_MERCHANT_ID);
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
