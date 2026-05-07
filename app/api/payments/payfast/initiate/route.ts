@@ -52,9 +52,8 @@ export async function POST(req: NextRequest) {
     select: { name: true, surname: true, email: true },
   });
 
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  // Always derive from the actual request host so notify_url matches the live domain exactly
+  const baseUrl = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
 
   const amount = forDeposit
     ? (booking.depositAmount ?? 0)
