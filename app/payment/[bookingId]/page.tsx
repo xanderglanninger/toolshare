@@ -798,16 +798,16 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
                 <span className={styles.summaryRowValue}>{fmt((booking as any).rentalAmount)}</span>
               </div>
             )}
-            {(booking as any).vatAmount != null && (
-              <div className={styles.summaryRow}>
-                <span className={styles.summaryRowLabel}>VAT (15%)</span>
-                <span className={styles.summaryRowValue}>{fmt((booking as any).vatAmount)}</span>
-              </div>
-            )}
             {booking.platformFee != null && (
               <div className={styles.summaryRow}>
                 <span className={styles.summaryRowLabel}>Platform fee (10%)</span>
                 <span className={styles.summaryRowValue}>{fmt(booking.platformFee)}</span>
+              </div>
+            )}
+            {(booking as any).vatAmount != null && (
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryRowLabel}>VAT (15%)</span>
+                <span className={styles.summaryRowValue}>{fmt((booking as any).vatAmount)}</span>
               </div>
             )}
           </div>
