@@ -50,11 +50,23 @@ export async function POST(req: NextRequest) {
 
     const owner = await db.user.findUnique({
       where: { id: session.user.id },
-      select: { idVerificationStatus: true },
+      select: {
+        idVerificationStatus: true,
+        bankAccountHolder: true,
+        bankName: true,
+        bankAccountNumber: true,
+        bankAccountType: true,
+      },
     });
     if (owner?.idVerificationStatus !== "verified") {
       return NextResponse.json(
         { error: "Your identity must be verified before you can create a listing." },
+        { status: 403 }
+      );
+    }
+    if (!owner?.bankAccountHolder || !owner?.bankName || !owner?.bankAccountNumber || !owner?.bankAccountType) {
+      return NextResponse.json(
+        { error: "You must add a bank account in Settings before creating a listing." },
         { status: 403 }
       );
     }
