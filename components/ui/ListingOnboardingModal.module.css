@@ -1,0 +1,358 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 24px;
+}
+
+.modal {
+  position: relative;
+  background: #f5f0e8;
+  border-radius: 16px;
+  padding: 40px 36px 32px;
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid #d4ccc0;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #a09080;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.closeBtn:hover { color: #1c1a17; }
+
+.iconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #1c1a17;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f5a800;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1c1a17;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #6a5c48;
+  margin-bottom: 24px;
+}
+
+/* ── Step indicators ── */
+
+.steps {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: default;
+  padding: 0;
+}
+
+.stepNum {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0d8cc;
+  color: #8a7a6a;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.stepLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a7a6a;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+}
+
+.stepActive .stepNum {
+  background: #1c1a17;
+  color: #f5a800;
+}
+.stepActive .stepLabel { color: #1c1a17; }
+
+.stepDone .stepNum {
+  background: #22c55e;
+  color: #fff;
+}
+.stepDone .stepLabel { color: #15803d; }
+
+.stepLine {
+  flex: 0 0 48px;
+  height: 2px;
+  background: #d4ccc0;
+  margin: 0 4px;
+  margin-bottom: 20px;
+}
+
+/* ── Step content ── */
+
+.stepBody {
+  font-size: 13px;
+  color: #6a5c48;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  width: 100%;
+  text-align: left;
+}
+
+.pendingBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 14px 16px;
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: left;
+}
+.pendingBox p {
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.6;
+  margin: 0;
+}
+.pendingBox svg { flex-shrink: 0; margin-top: 2px; }
+
+/* ── Upload slots ── */
+
+.uploadRow {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.uploadSlot {
+  flex: 1;
+  border: 1.5px dashed #c8bfad;
+  border-radius: 10px;
+  background: #faf7f2;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.uploadSlot:hover { border-color: #f5a800; background: #fff8eb; }
+
+.slotEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b0a898;
+}
+
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+
+.slotLabel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 4px;
+  background: rgba(28, 26, 23, 0.6);
+  color: #f5f0e8;
+  letter-spacing: 0.03em;
+}
+
+.slotDone {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #22c55e;
+  z-index: 2;
+}
+.slotDone::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 18px;
+  text-align: center;
+}
+
+.slotErr {
+  position: absolute;
+  bottom: 28px;
+  left: 4px;
+  right: 4px;
+  font-size: 9px;
+  color: #e05a00;
+  background: rgba(255,255,255,0.9);
+  border-radius: 3px;
+  padding: 2px 4px;
+  z-index: 2;
+}
+
+/* ── Bank account form ── */
+
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6a5c48;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #a09080;
+}
+
+.input {
+  background: #faf7f2;
+  border: 1.5px solid #d4ccc0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1c1a17;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color 0.15s;
+  appearance: auto;
+}
+.input:focus {
+  outline: none;
+  border-color: #f5a800;
+}
+
+/* ── Buttons ── */
+
+.btnPrimary {
+  width: 100%;
+  background: #f5a800;
+  color: #1c1a17;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+.btnPrimary:hover:not(:disabled) { background: #e09900; transform: translateY(-1px); }
+.btnPrimary:active:not(:disabled) { transform: none; }
+.btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btnSecondary {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5a800;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s;
+}
+.btnSecondary:hover { color: #e09900; }
+
+.errMsg {
+  font-size: 12px;
+  color: #e05a00;
+  margin-bottom: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+@media (max-width: 480px) {
+  .modal { padding: 36px 20px 28px; }
+  .row2 { grid-template-columns: 1fr; }
+}

@@ -12,6 +12,10 @@ type DashboardCtx = {
   setNotifUnread: (n: number) => void;
   idVerificationStatus: string;
   setIdVerificationStatus: (s: string) => void;
+  hasBankAccount: boolean | null;
+  setHasBankAccount: (v: boolean) => void;
+  showListingGate: boolean;
+  setShowListingGate: (v: boolean) => void;
   isAdmin: boolean;
 };
 
@@ -24,6 +28,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [notifUnread, setNotifUnread] = useState(0);
   const [idVerificationStatus, setIdVerificationStatus] = useState("unverified");
+  const [hasBankAccount, setHasBankAccount] = useState<boolean | null>(null);
+  const [showListingGate, setShowListingGate] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -40,6 +46,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .then((j) => {
         if (j.data?.image) setUserImage(j.data.image);
         if (j.data?.idVerificationStatus) setIdVerificationStatus(j.data.idVerificationStatus);
+      })
+      .catch(() => {});
+    fetch("/api/settings/bank-account")
+      .then((r) => r.json())
+      .then((j) => {
+        const b = j.data;
+        setHasBankAccount(!!(b?.bankAccountHolder && b?.bankName && b?.bankAccountNumber && b?.bankAccountType));
       })
       .catch(() => {});
   }, []);
@@ -73,6 +86,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       theme, toggleTheme,
       notifUnread, setNotifUnread,
       idVerificationStatus, setIdVerificationStatus,
+      hasBankAccount, setHasBankAccount,
+      showListingGate, setShowListingGate,
       isAdmin,
     }}>
       {children}

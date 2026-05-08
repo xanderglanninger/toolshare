@@ -8,7 +8,7 @@ import Logo from "@/components/ui/Logo";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { DashboardProvider, useDashboard } from "./context";
 import Spinner from "@/components/ui/Spinner";
-import VerificationGateModal from "@/components/ui/VerificationGateModal";
+import ListingOnboardingModal from "@/components/ui/ListingOnboardingModal";
 
 const ADMIN_NAV = [
   { id: "stats",   path: "/dashboard/admin/stats",   label: "Statistics",        icon: "▦" },
@@ -45,12 +45,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { userImage, notifUnread, setNotifUnread, idVerificationStatus, setIdVerificationStatus, isAdmin } = useDashboard();
+  const { userImage, notifUnread, setNotifUnread, idVerificationStatus, setIdVerificationStatus, hasBankAccount, setHasBankAccount, showListingGate, setShowListingGate, isAdmin } = useDashboard();
 
   const [sideOpen, setSideOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [showGate, setShowGate] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const firstName  = session?.user?.name?.split(" ")[0] ?? "there";
@@ -84,13 +83,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   function handleFab() {
-    if (!isVerified) { setShowGate(true); return; }
+    const idDone = idVerificationStatus === "verified" || idVerificationStatus === "pending";
+    if (!idDone || !hasBankAccount) { setShowListingGate(true); return; }
     navigate("/dashboard/create");
-  }
-
-  function handleGateSubmitted() {
-    setIdVerificationStatus("pending");
-    setShowGate(false);
   }
 
   return (
@@ -207,11 +202,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         </button>
       </main>
 
-      {showGate && (
-        <VerificationGateModal
-          status={idVerificationStatus}
-          onClose={() => setShowGate(false)}
-          onSubmitted={handleGateSubmitted}
+      {showListingGate && (
+        <ListingOnboardingModal
+          idVerificationStatus={idVerificationStatus}
+          hasBankAccount={hasBankAccount}
+          onClose={() => setShowListingGate(false)}
+          onIdSubmitted={() => setIdVerificationStatus("pending")}
+          onBankSaved={() => { setHasBankAccount(true); setShowListingGate(false); navigate("/dashboard/create"); }}
         />
       )}
 

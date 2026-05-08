@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Package } from "lucide-react";
 import styles from "./MyListings.module.css";
 import Spinner from "@/components/ui/Spinner";
+import { useDashboard } from "@/app/dashboard/context";
 
 type Listing = {
   id: string;
@@ -23,25 +24,19 @@ type Props = {
 export default function MyListings({ onEdit }: Props) {
   const { data: session } = useSession();
   const router = useRouter();
+  const { idVerificationStatus, hasBankAccount, setShowListingGate } = useDashboard();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [hasBankAccount, setHasBankAccount] = useState<boolean | null>(null);
 
   const fetchListings = useCallback(async () => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const [listRes, bankRes] = await Promise.all([
-        fetch(`/api/listings?ownerId=${session.user.id}&limit=50`),
-        fetch("/api/settings/bank-account"),
-      ]);
-      const listJson = await listRes.json();
-      const bankJson = await bankRes.json();
-      setListings(listJson.data ?? []);
-      const b = bankJson.data;
-      setHasBankAccount(!!(b?.bankAccountHolder && b?.bankName && b?.bankAccountNumber && b?.bankAccountType));
+      const res = await fetch(`/api/listings?ownerId=${session.user.id}&limit=50`);
+      const json = await res.json();
+      setListings(json.data ?? []);
     } catch {
       setError("Failed to load listings.");
     } finally {
@@ -71,18 +66,13 @@ export default function MyListings({ onEdit }: Props) {
         </div>
         <button
           className={styles.btnPrimary}
-          onClick={() => router.push("/dashboard?tab=create")}
-          disabled={hasBankAccount === false}
-          title={hasBankAccount === false ? "Add a bank account in Settings before creating a listing" : undefined}
+          onClick={() => {
+            const idDone = idVerificationStatus === "verified" || idVerificationStatus === "pending";
+            if (!idDone || !hasBankAccount) { setShowListingGate(true); return; }
+            router.push("/dashboard/create");
+          }}
         >+ Add Listing</button>
       </div>
-
-      {hasBankAccount === false && (
-        <div style={{ margin: "1rem 0", padding: "0.875rem 1rem", borderRadius: "8px", background: "var(--amber-50, #fffbeb)", border: "1px solid var(--amber-200, #fde68a)", color: "var(--amber-800, #92400e)", fontSize: "0.875rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span>You need to <button onClick={() => router.push("/dashboard?tab=settings")} style={{ background: "none", border: "none", padding: 0, color: "inherit", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>add a bank account</button> in Settings before you can create listings.</span>
-        </div>
-      )}
 
       {loading && <p style={{ padding: "2rem" }}>Loading…</p>}
       {error   && <p style={{ padding: "2rem", color: "red" }}>{error}</p>}
