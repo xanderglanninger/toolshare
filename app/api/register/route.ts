@@ -5,17 +5,11 @@ import { validateSAId } from "@/lib/utils/sa-id";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, surname, email, idNumber, password, selfieUrl, idPhotoUrl } = body;
+    const { name, surname, email, idNumber, password } = body;
 
     if (!name || !surname || !email || !idNumber || !password) {
       return NextResponse.json(
         { error: "All fields are required." },
-        { status: 400 }
-      );
-    }
-    if (!selfieUrl || !idPhotoUrl) {
-      return NextResponse.json(
-        { error: "A selfie and a photo of your ID document are required." },
         { status: 400 }
       );
     }
@@ -31,15 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: idValidation.error }, { status: 400 });
     }
 
-    const result = await registerUser({
-      name,
-      surname,
-      email,
-      idNumber,
-      password,
-      selfieUrl,
-      idPhotoUrl,
-    });
+    const result = await registerUser({ name, surname, email, idNumber, password });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 409 });

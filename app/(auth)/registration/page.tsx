@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import styles from "./register.module.css";
@@ -22,18 +22,7 @@ const slides = [
   },
 ];
 
-const steps = ["Account", "Identity", "Documents", "Security"];
-
-type UploadState = {
-  url: string;
-  preview: string;
-  uploading: boolean;
-  error: string;
-};
-
-function emptyUpload(): UploadState {
-  return { url: "", preview: "", uploading: false, error: "" };
-}
+const steps = ["Account", "Identity", "Security"];
 
 function RegisterContent() {
   const router       = useRouter();
@@ -55,12 +44,6 @@ function RegisterContent() {
     confirmPassword: "",
   });
 
-  const [selfie,   setSelfie]   = useState<UploadState>(emptyUpload());
-  const [idPhoto,  setIdPhoto]  = useState<UploadState>(emptyUpload());
-
-  const selfieRef  = useRef<HTMLInputElement>(null);
-  const idPhotoRef = useRef<HTMLInputElement>(null);
-
   const set = (field: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -77,40 +60,6 @@ function RegisterContent() {
     setTick((t) => t + 1);
   };
 
-  const uploadFile = async (
-    file: File,
-    kind: "selfie" | "id_photo",
-    setState: (s: UploadState) => void
-  ) => {
-    const preview = URL.createObjectURL(file);
-    setState({ url: "", preview, uploading: true, error: "" });
-
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("kind", kind);
-
-    try {
-      const res  = await fetch("/api/register/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) {
-        setState({ url: "", preview, uploading: false, error: data.error || "Upload failed." });
-      } else {
-        setState({ url: data.url, preview, uploading: false, error: "" });
-      }
-    } catch {
-      setState({ url: "", preview, uploading: false, error: "Upload failed. Please try again." });
-    }
-  };
-
-  const handleFileChange = (
-    kind: "selfie" | "id_photo",
-    setState: (s: UploadState) => void
-  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    uploadFile(file, kind, setState);
-  };
-
   const validateStep = (): string => {
     if (step === 0) {
       if (!form.name.trim())    return "Please enter your first name.";
@@ -125,12 +74,6 @@ function RegisterContent() {
       if (!result.valid) return result.error!;
     }
     if (step === 2) {
-      if (!selfie.url && !selfie.uploading)   return "Please upload a selfie photo.";
-      if (selfie.uploading)                    return "Please wait for your selfie to finish uploading.";
-      if (!idPhoto.url && !idPhoto.uploading) return "Please upload a photo of your ID document.";
-      if (idPhoto.uploading)                  return "Please wait for your ID photo to finish uploading.";
-    }
-    if (step === 3) {
       if (!form.password)                         return "Please enter a password.";
       if (form.password.length < 8)               return "Password must be at least 8 characters.";
       if (form.password !== form.confirmPassword) return "Passwords don't match.";
@@ -146,7 +89,7 @@ function RegisterContent() {
       return;
     }
 
-    if (step < 3) {
+    if (step < 2) {
       setStep(step + 1);
       return;
     }
@@ -158,13 +101,11 @@ function RegisterContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name:       form.name,
-          surname:    form.surname,
-          email:      form.email,
-          idNumber:   form.idNumber,
-          password:   form.password,
-          selfieUrl:  selfie.url,
-          idPhotoUrl: idPhoto.url,
+          name:     form.name,
+          surname:  form.surname,
+          email:    form.email,
+          idNumber: form.idNumber,
+          password: form.password,
         }),
       });
 
@@ -322,107 +263,8 @@ function RegisterContent() {
               </div>
             )}
 
-            {/* Step 2: Documents */}
+            {/* Step 2: Security */}
             {step === 2 && (
-              <div className={styles.stepFields}>
-                <p className={styles.docsIntro}>
-                  We need to verify your identity. Upload a clear photo of your face and your SA ID document.
-                  Your photos are stored securely and reviewed by our team.
-                </p>
-
-                {/* Selfie upload */}
-                <div className={styles.uploadField}>
-                  <label>Selfie — photo of your face</label>
-                  <input
-                    ref={selfieRef}
-                    type="file"
-                    accept="image/*"
-                    capture="user"
-                    style={{ display: "none" }}
-                    onChange={handleFileChange("selfie", setSelfie)}
-                  />
-                  {selfie.preview ? (
-                    <div className={styles.uploadPreviewWrap}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={selfie.preview} alt="Selfie preview" className={styles.uploadPreview} />
-                      <div className={styles.uploadOverlay}>
-                        {selfie.uploading && <span className={styles.uploadingBadge}>Uploading…</span>}
-                        {selfie.url && <span className={styles.uploadedBadge}>Uploaded</span>}
-                        {selfie.error && <span className={styles.uploadErrorBadge}>{selfie.error}</span>}
-                        <button
-                          type="button"
-                          className={styles.retakeBtn}
-                          onClick={() => selfieRef.current?.click()}
-                          disabled={selfie.uploading}
-                        >
-                          Retake
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={styles.uploadBtn}
-                      onClick={() => selfieRef.current?.click()}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                      </svg>
-                      Take or upload selfie
-                    </button>
-                  )}
-                </div>
-
-                {/* ID photo upload */}
-                <div className={styles.uploadField}>
-                  <label>ID document — front of your SA ID / Smart Card</label>
-                  <input
-                    ref={idPhotoRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    style={{ display: "none" }}
-                    onChange={handleFileChange("id_photo", setIdPhoto)}
-                  />
-                  {idPhoto.preview ? (
-                    <div className={styles.uploadPreviewWrap}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={idPhoto.preview} alt="ID photo preview" className={styles.uploadPreview} />
-                      <div className={styles.uploadOverlay}>
-                        {idPhoto.uploading && <span className={styles.uploadingBadge}>Uploading…</span>}
-                        {idPhoto.url && <span className={styles.uploadedBadge}>Uploaded</span>}
-                        {idPhoto.error && <span className={styles.uploadErrorBadge}>{idPhoto.error}</span>}
-                        <button
-                          type="button"
-                          className={styles.retakeBtn}
-                          onClick={() => idPhotoRef.current?.click()}
-                          disabled={idPhoto.uploading}
-                        >
-                          Retake
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={styles.uploadBtn}
-                      onClick={() => idPhotoRef.current?.click()}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="2" y="5" width="20" height="14" rx="2"/>
-                        <path d="M2 10h20"/>
-                        <path d="M6 15h4M14 15h4"/>
-                      </svg>
-                      Upload ID document photo
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Security */}
-            {step === 3 && (
               <div className={styles.stepFields}>
                 <div className={styles.field}>
                   <label htmlFor="password">Password</label>
@@ -474,9 +316,9 @@ function RegisterContent() {
               <button
                 className={`${styles.btnPrimary}${step === 0 ? " " + styles.btnFull : ""}`}
                 onClick={handleNext}
-                disabled={isLoading || selfie.uploading || idPhoto.uploading}
+                disabled={isLoading}
               >
-                {isLoading ? "Creating account…" : step < 3 ? "Continue" : "Create account"}
+                {isLoading ? "Creating account…" : step < 2 ? "Continue" : "Create account"}
               </button>
             </div>
 
