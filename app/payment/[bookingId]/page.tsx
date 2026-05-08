@@ -716,7 +716,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           <h1 className={styles.successTitle}>Booking confirmed!</h1>
           <p className={styles.successSub}>
             Your booking for <strong>{booking.listing.title}</strong> has been confirmed.
-            {booking.depositAmount && " Your deposit is held in escrow and will be returned after the rental."}
+            The lister will be paid daily as your rental progresses.
           </p>
           <div className={styles.successRef}>
             Reference: <strong>{success.paymentReference}</strong>
@@ -792,28 +792,31 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
               <span className={styles.summaryRowLabel}>Duration</span>
               <span className={styles.summaryRowValue}>{days} day{days !== 1 ? "s" : ""}</span>
             </div>
-            {booking.depositAmount && (
+            {(booking as any).rentalAmount != null && (
               <div className={styles.summaryRow}>
-                <span className={styles.summaryRowLabel}>Refundable deposit</span>
-                <span className={styles.summaryRowValue}>{fmt(booking.depositAmount)}</span>
+                <span className={styles.summaryRowLabel}>Rental ({days} × {fmt(booking.listing.pricePerDay)})</span>
+                <span className={styles.summaryRowValue}>{fmt((booking as any).rentalAmount)}</span>
+              </div>
+            )}
+            {(booking as any).vatAmount != null && (
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryRowLabel}>VAT (15%)</span>
+                <span className={styles.summaryRowValue}>{fmt((booking as any).vatAmount)}</span>
+              </div>
+            )}
+            {booking.platformFee != null && (
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryRowLabel}>Platform fee (10%)</span>
+                <span className={styles.summaryRowValue}>{fmt(booking.platformFee)}</span>
               </div>
             )}
           </div>
 
           <div className={styles.summaryDivider} />
 
-          {booking.depositAmount && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryRowLabel}>Rental amount</span>
-              <span className={styles.summaryRowValue}>{fmt(booking.totalAmount)}</span>
-            </div>
-          )}
-
           <div className={styles.summaryTotal}>
-            <span>{booking.depositAmount ? "Total including deposit" : "Total due"}</span>
-            <span className={styles.summaryTotalValue}>
-              {fmt(booking.totalAmount + (booking.depositAmount ?? 0))}
-            </span>
+            <span>Total due</span>
+            <span className={styles.summaryTotalValue}>{fmt(booking.totalAmount)}</span>
           </div>
         </div>
 
@@ -822,13 +825,9 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           padding: "0.75rem 1rem", fontSize: "0.82rem", color: "#c8a84b",
           marginBottom: "1rem", lineHeight: 1.5,
         }}>
-          🔒 <strong>Escrow protection:</strong> Your rental payment is held securely by us. It is only
-          released to the owner after both parties confirm the item was returned safely. If something
-          goes wrong, you can open a dispute and an admin will review it.
-          {booking.depositAmount && (
-            <> The <strong>refundable deposit of {fmt(booking.depositAmount)}</strong> is returned
-            automatically after a successful rental.</>
-          )}
+          🔒 <strong>Escrow protection:</strong> Your rental payment is held securely by us and paid
+          to the lister daily as the rental progresses. If something goes wrong, you can open a
+          dispute and an admin will review it.
         </div>
 
         {/* Payment method selector */}

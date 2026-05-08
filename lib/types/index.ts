@@ -44,6 +44,9 @@ export interface Booking {
   startDate: Date;
   endDate: Date;
   totalAmount: number;
+  rentalAmount: number | null;
+  vatAmount: number | null;
+  platformFee: number | null;
   depositAmount: number | null;
   status: BookingStatus;
   notes: string | null;

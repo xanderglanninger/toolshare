@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/auto-cancel-handover",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/daily-payouts",
+      "schedule": "0 6 * * *"
     }
   ]
 }

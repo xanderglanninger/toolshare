@@ -2,7 +2,7 @@ import { db } from "@/lib/db/client";
 import { createNotification } from "@/lib/services/notification.service";
 import { issuePartialRefund, releaseDeposit } from "@/lib/services/payments.service";
 import type { BookingStatus, BookingWithDetails } from "@/lib/types";
-import { calculatePlatformFee } from "@/lib/utils/platform-fee";
+import { calculateBookingAmounts } from "@/lib/utils/platform-fee";
 
 const bookingInclude = {
   listing: {
@@ -30,24 +30,8 @@ const bookingInclude = {
 // Scalar fields on Booking that need to be explicitly passed through (they are returned by default with include)
 // TypeScript cast via `as unknown as BookingWithDetails` handles this.
 
-export function computeRentalTotal(
-  listing: { pricePerDay: number; pricePerWeek?: number | null; pricePerMonth?: number | null },
-  startDate: Date,
-  endDate: Date
-): number {
-  const days = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-  if (listing.pricePerMonth && days >= 28) {
-    const months = Math.floor(days / 30);
-    const remainder = days % 30;
-    return Math.round((months * listing.pricePerMonth + remainder * listing.pricePerDay) * 100) / 100;
-  }
-  if (listing.pricePerWeek && days >= 7) {
-    const weeks = Math.floor(days / 7);
-    const remainder = days % 7;
-    return Math.round((weeks * listing.pricePerWeek + remainder * listing.pricePerDay) * 100) / 100;
-  }
-  return Math.round(days * listing.pricePerDay * 100) / 100;
+export function computeDays(startDate: Date, endDate: Date): number {
+  return Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 export async function createBooking(data: {
@@ -111,17 +95,11 @@ export async function createBooking(data: {
         : `All ${quantity} units are booked for those dates (including a 2-day handover window).`
     );
 
-  const days = Math.max(1, Math.ceil(
-    (data.endDate.getTime() - data.startDate.getTime()) / (1000 * 60 * 60 * 24)
-  ));
+  const days = computeDays(data.startDate, data.endDate);
 
-  // Fix #1: Compute totalAmount server-side; ignore the client-supplied value
-  const serverTotal = computeRentalTotal(listing, data.startDate, data.endDate);
-  const { feeAmount } = calculatePlatformFee(listing.pricePerDay, days, serverTotal);
-
-  // Fix #9: Use listing's own deposit amount as the authoritative value.
-  // The client-supplied depositAmount is ignored — only the listing owner can set it.
-  const depositAmount: number | null = (listing as any).depositAmount ?? null;
+  // Compute server-side: rentalAmount + 15% VAT + 10% platform fee = totalAmount
+  const { rentalAmount, vatAmount, platformFee, totalAmount } =
+    calculateBookingAmounts(listing.pricePerDay, days);
 
   return db.booking.create({
     data: {
@@ -129,9 +107,11 @@ export async function createBooking(data: {
       borrowerId:   data.borrowerId,
       startDate:    data.startDate,
       endDate:      data.endDate,
-      totalAmount:  serverTotal,
-      platformFee:  feeAmount,
-      depositAmount,
+      rentalAmount,
+      vatAmount,
+      totalAmount,
+      platformFee,
+      depositAmount: null,
       notes:        data.notes ?? null,
       status:       "PENDING",
     },

@@ -163,9 +163,6 @@ type FormData = {
   itemInsured: boolean;
   images: string[];
   pricePerDay: string;
-  pricePerWeek: string;
-  pricePerMonth: string;
-  depositAmount: string;
   availableFrom: string;
   availableTo: string;
   address: string;
@@ -211,7 +208,7 @@ const INITIAL: FormData = {
   title: "", description: "", category: "",
   quantity: "1", make: "", model: "", size: "", currentValue: "", itemInsured: false,
   images: [],
-  pricePerDay: "", pricePerWeek: "", pricePerMonth: "", depositAmount: "",
+  pricePerDay: "",
   availableFrom: "", availableTo: "",
   address: "", city: "", province: "", postalCode: "",
   deliveryAvailable: false, deliveryRadius: "", deliveryFee: "",
@@ -315,12 +312,6 @@ function LivePreview({ form }: { form: FormData }) {
               <span className={styles.previewPlaceholderMeta}>—</span>
             )}
           </div>
-          {form.pricePerWeek && parseFloat(form.pricePerWeek) > 0 && (
-            <div className={styles.previewMetaRow}>
-              <span className={styles.previewMetaLabel}>Weekly</span>
-              <span className={styles.previewMetaValue}>{formatZAR(form.pricePerWeek)}</span>
-            </div>
-          )}
           <div className={styles.previewMetaRow}>
             <span className={styles.previewMetaLabel}>Location</span>
             {location ? (
@@ -634,9 +625,6 @@ function Step3({ form, onChange }: { form: FormData; onChange: (k: keyof FormDat
 
       <div className={styles.twoCol}>
         <PriceField label="Per day"          fieldKey="pricePerDay"    required form={form} onChange={onChange} />
-        <PriceField label="Per week"         fieldKey="pricePerWeek"           form={form} onChange={onChange} />
-        <PriceField label="Per month"        fieldKey="pricePerMonth"          form={form} onChange={onChange} />
-        <PriceField label="Security deposit" fieldKey="depositAmount"          form={form} onChange={onChange} />
       </div>
 
       <div className={styles.divider} />
@@ -799,14 +787,6 @@ function Step5({ form }: { form: FormData }) {
               <span className={styles.reviewBlockValue}>{formatZAR(form.pricePerDay)}</span>
             </div>
             <div className={styles.reviewBlock}>
-              <span className={styles.reviewBlockLabel}>Weekly</span>
-              <span className={styles.reviewBlockValue}>{formatZAR(form.pricePerWeek)}</span>
-            </div>
-            <div className={styles.reviewBlock}>
-              <span className={styles.reviewBlockLabel}>Deposit</span>
-              <span className={styles.reviewBlockValue}>{formatZAR(form.depositAmount)}</span>
-            </div>
-            <div className={styles.reviewBlock}>
               <span className={styles.reviewBlockLabel}>Location</span>
               <span className={styles.reviewBlockValue}>
                 {[form.city, form.province].filter(Boolean).join(", ") || "—"}
@@ -902,9 +882,9 @@ export default function CreateListing() {
         itemInsured:       form.itemInsured,
         images:            form.images,
         pricePerDay:       parseFloat(form.pricePerDay),
-        pricePerWeek:      form.pricePerWeek  ? parseFloat(form.pricePerWeek)  : null,
-        pricePerMonth:     form.pricePerMonth ? parseFloat(form.pricePerMonth) : null,
-        depositAmount:     form.depositAmount ? parseFloat(form.depositAmount) : null,
+        pricePerWeek:      null,
+        pricePerMonth:     null,
+        depositAmount:     null,
         availableFrom:     form.availableFrom ? new Date(form.availableFrom).toISOString() : null,
         availableTo:       form.availableTo   ? new Date(form.availableTo).toISOString()   : null,
         address:           form.address,

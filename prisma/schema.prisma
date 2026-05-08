@@ -29,6 +29,7 @@ model User {
   accounts             Account[]
   listings             Listing[]
   borrowedBookings     Booking[] @relation("borrowedBookings")
+  listerPayouts        DailyPayout[] @relation("listerPayouts")
   stripeAccountId      String?
   stripeAccountEnabled Boolean   @default(false)
   threadParticipations MessageThreadParticipant[]
@@ -168,6 +169,8 @@ model Booking {
   startDate     DateTime
   endDate       DateTime
   totalAmount   Float
+  rentalAmount  Float?
+  vatAmount     Float?
   platformFee   Float?
   depositAmount Float?
   status        BookingStatus @default(PENDING)
@@ -224,6 +227,7 @@ model Booking {
   issues        BookingIssue[]
   returnIssues  ReturnIssue[]
   rentalUpdates RentalUpdate[]
+  dailyPayouts  DailyPayout[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -340,6 +344,28 @@ model EscrowReleaseJob {
   status      String    @default("PENDING")
   error       String?
   createdAt   DateTime  @default(now())
+}
+
+// ─── Daily Payouts ──────────────────────────────────────────────────────────
+// One record per booking per day the item is rented. Tracks what is owed to
+// the lister (pricePerDay) and whether it has been paid out.
+
+model DailyPayout {
+  id          String    @id @default(cuid())
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  listerId    String
+  lister      User      @relation("listerPayouts", fields: [listerId], references: [id], onDelete: Cascade)
+  date        DateTime  // the calendar day this payout covers
+  amount      Float     // pricePerDay for that booking
+  status      String    @default("PENDING") // PENDING | PAID | FAILED
+  paidAt      DateTime?
+  reference   String?   // bank transfer / PayFast payout reference
+  createdAt   DateTime  @default(now())
+
+  @@unique([bookingId, date])
+  @@index([listerId])
+  @@index([status])
 }
 
 // ─── Messaging ──────────────────────────────────────────────────────────────
