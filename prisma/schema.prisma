@@ -32,6 +32,13 @@ model User {
   listerPayouts        DailyPayout[] @relation("listerPayouts")
   stripeAccountId      String?
   stripeAccountEnabled Boolean   @default(false)
+
+  // Bank account for daily payouts
+  bankAccountHolder    String?
+  bankName             String?
+  bankAccountNumber    String?
+  bankAccountType      String?   @default("cheque")
+  bankBranchCode       String?
   threadParticipations MessageThreadParticipant[]
   sentMessages         Message[]                  @relation("SentMessages")
   reportsMade          Report[]                   @relation("ReportsMade")

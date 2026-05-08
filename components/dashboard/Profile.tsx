@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useSearchParams, useRouter } from "next/navigation";
 import styles from "./Profile.module.css";
 import { useDashboard } from "@/app/dashboard/context";
 
-type AccountStatus =
-  | { state: "loading" }
-  | { state: "not_connected" }
-  | { state: "pending"; detailsSubmitted: boolean }
-  | { state: "active"; payoutsEnabled: boolean };
+interface BankAccount {
+  bankAccountHolder: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountType: string;
+  bankBranchCode: string;
+}
 
 interface Props {
   onImageUpdate?: (url: string) => void;
@@ -38,8 +39,6 @@ const emptySlot = (): UploadSlot => ({ url: "", preview: "", uploading: false, e
 export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) {
   const { data: session, update: updateSession } = useSession();
   const { idVerificationStatus, setIdVerificationStatus } = useDashboard();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [avatarUrl,      setAvatarUrl]      = useState<string | null>(null);
@@ -56,8 +55,12 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
   const [showNew,        setShowNew]        = useState(false);
   const [pwSaving,       setPwSaving]       = useState(false);
 
-  const [status,         setStatus]         = useState<AccountStatus>({ state: "loading" });
-  const [connecting,     setConnecting]     = useState(false);
+  const [bank, setBank] = useState<BankAccount>({
+    bankAccountHolder: "", bankName: "", bankAccountNumber: "",
+    bankAccountType: "cheque", bankBranchCode: "",
+  });
+  const [bankSaving, setBankSaving] = useState(false);
+  const [bankLoaded, setBankLoaded] = useState(false);
 
   const [toast, setToast] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
 
@@ -75,41 +78,46 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
       .then((j) => { if (j.data?.image) setAvatarUrl(j.data.image); })
       .catch(() => {});
 
-    if (searchParams.get("connected") === "true") {
-      router.replace("/dashboard?tab=settings");
-    }
-    loadPayoutStatus();
+    loadBankAccount();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function loadPayoutStatus() {
+  async function loadBankAccount() {
     try {
-      const res  = await fetch("/api/connect/status");
+      const res  = await fetch("/api/settings/bank-account");
       const json = await res.json();
-      if (!res.ok || !json.data) { setStatus({ state: "not_connected" }); return; }
-      const d = json.data;
-      if (!d.connected) {
-        setStatus({ state: "not_connected" });
-      } else if (d.chargesEnabled) {
-        setStatus({ state: "active", payoutsEnabled: d.payoutsEnabled });
-      } else {
-        setStatus({ state: "pending", detailsSubmitted: d.detailsSubmitted });
+      if (res.ok && json.data) {
+        setBank({
+          bankAccountHolder: json.data.bankAccountHolder ?? "",
+          bankName:          json.data.bankName          ?? "",
+          bankAccountNumber: json.data.bankAccountNumber ?? "",
+          bankAccountType:   json.data.bankAccountType   ?? "cheque",
+          bankBranchCode:    json.data.bankBranchCode    ?? "",
+        });
       }
-    } catch {
-      setStatus({ state: "not_connected" });
-    }
+    } catch {}
+    setBankLoaded(true);
   }
 
-  async function handleConnect() {
-    setConnecting(true);
+  async function handleBankSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!bank.bankAccountHolder || !bank.bankName || !bank.bankAccountNumber || !bank.bankAccountType) {
+      showToast("Please fill in all required bank account fields.", "err"); return;
+    }
+    setBankSaving(true);
     try {
-      const res  = await fetch("/api/connect/onboard", { method: "POST" });
+      const res  = await fetch("/api/settings/bank-account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bank),
+      });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to start onboarding");
-      window.location.href = json.data.url;
+      if (!res.ok) throw new Error(json.error ?? "Failed to save bank account");
+      showToast("Bank account saved!", "ok");
     } catch (err: any) {
-      showToast(err.message ?? "Something went wrong", "err");
-      setConnecting(false);
+      showToast(err.message ?? "Something went wrong.", "err");
+    } finally {
+      setBankSaving(false);
     }
   }
 
@@ -558,77 +566,71 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
             <div>
               <p className={styles.sectionTitle}>Payout Account</p>
               <p className={styles.sectionSub}>
-                Link your bank account to receive earnings when someone rents your items.
+                Your South African bank account for receiving daily rental payments.
               </p>
             </div>
           </div>
-          <StatusChip status={status} />
         </div>
         <div className={styles.sectionBody}>
-          {status.state === "loading" && (
+          {!bankLoaded ? (
             <div className={styles.loadingRow}>
               <span className={styles.loadingDot} /><span className={styles.loadingDot} /><span className={styles.loadingDot} />
-              <span className={styles.loadingText}>Checking account status…</span>
+              <span className={styles.loadingText}>Loading…</span>
             </div>
-          )}
-          {status.state === "not_connected" && (
-            <>
-              <div className={styles.infoBox}>
-                <p className={styles.infoTitle}>How payouts work</p>
-                <ol className={styles.infoList}>
-                  <li>Connect your bank account via Stripe's secure onboarding</li>
-                  <li>When a borrower pays for your listing, the money is transferred directly to your account</li>
-                  <li>Stripe deposits funds on a rolling 2-day basis</li>
-                </ol>
-              </div>
-              <button className={styles.connectBtn} onClick={handleConnect} disabled={connecting}>
-                {connecting ? <><span className={styles.inlineSpinner} /> Redirecting to Stripe…</> : (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-                    </svg>
-                    Connect bank account
-                  </>
-                )}
-              </button>
-            </>
-          )}
-          {status.state === "pending" && (
-            <>
-              <div className={styles.warningBox}>
-                <span className={styles.warningIcon}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </span>
-                <div>
-                  <p className={styles.warningTitle}>Setup incomplete</p>
-                  <p className={styles.warningDesc}>
-                    {status.detailsSubmitted
-                      ? "Your details have been submitted and are under review by Stripe."
-                      : "You haven't finished setting up your payout account. Complete the steps to start receiving payments."}
-                  </p>
+          ) : (
+            <form onSubmit={handleBankSave}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Account holder name *</label>
+                  <input className={styles.input} value={bank.bankAccountHolder}
+                    onChange={e => setBank(b => ({ ...b, bankAccountHolder: e.target.value }))}
+                    placeholder="Full name as on bank account" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Bank name *</label>
+                  <select className={styles.input} value={bank.bankName}
+                    onChange={e => setBank(b => ({ ...b, bankName: e.target.value }))}>
+                    <option value="">Select bank…</option>
+                    <option>ABSA</option>
+                    <option>Capitec</option>
+                    <option>FNB</option>
+                    <option>Nedbank</option>
+                    <option>Standard Bank</option>
+                    <option>Investec</option>
+                    <option>African Bank</option>
+                    <option>TymeBank</option>
+                    <option>Discovery Bank</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Account number *</label>
+                  <input className={styles.input} value={bank.bankAccountNumber}
+                    onChange={e => setBank(b => ({ ...b, bankAccountNumber: e.target.value }))}
+                    placeholder="e.g. 1234567890" />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Account type *</label>
+                  <select className={styles.input} value={bank.bankAccountType}
+                    onChange={e => setBank(b => ({ ...b, bankAccountType: e.target.value }))}>
+                    <option value="cheque">Cheque / Current</option>
+                    <option value="savings">Savings</option>
+                    <option value="transmission">Transmission</option>
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Branch code</label>
+                  <input className={styles.input} value={bank.bankBranchCode}
+                    onChange={e => setBank(b => ({ ...b, bankBranchCode: e.target.value }))}
+                    placeholder="e.g. 632005" />
                 </div>
               </div>
-              {!status.detailsSubmitted && (
-                <button className={styles.connectBtn} onClick={handleConnect} disabled={connecting}>
-                  {connecting ? <><span className={styles.inlineSpinner} /> Redirecting…</> : "Continue setup →"}
+              <div className={styles.formFooter}>
+                <button type="submit" className={styles.saveBtn} disabled={bankSaving}>
+                  {bankSaving ? <><span className={styles.inlineSpinner} /> Saving…</> : "Save bank account"}
                 </button>
-              )}
-            </>
-          )}
-          {status.state === "active" && (
-            <div className={styles.successBox}>
-              <span className={styles.successIcon}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </span>
-              <div>
-                <p className={styles.successTitle}>Bank account connected</p>
-                <p className={styles.successDesc}>
-                  Your account is active. Earnings from your listings will be automatically
-                  transferred to your bank account after each completed booking. Payouts are
-                  processed by Stripe and typically arrive within 2 business days.
-                </p>
               </div>
-            </div>
+            </form>
           )}
         </div>
       </div>
@@ -724,12 +726,6 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
         </div>
       </div>
 
-      <p className={styles.stripeNote}>
-        Payments and payouts are powered by{" "}
-        <span className={styles.stripeWordmark}>Stripe</span>. Your financial
-        information is handled securely and never stored on our servers.
-      </p>
-
       {toast && (
         <div className={`${styles.toast} ${toast.kind === "ok" ? styles.toastOk : styles.toastErr}`}>
           {toast.kind === "ok" ? (
@@ -744,9 +740,3 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
   );
 }
 
-function StatusChip({ status }: { status: AccountStatus }) {
-  if (status.state === "loading")       return null;
-  if (status.state === "not_connected") return <span className={`${styles.chip} ${styles.chipGrey}`}>Not connected</span>;
-  if (status.state === "pending")       return <span className={`${styles.chip} ${styles.chipAmber}`}>Setup incomplete</span>;
-  return <span className={`${styles.chip} ${styles.chipGreen}`}>Active</span>;
-}
