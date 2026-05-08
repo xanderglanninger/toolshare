@@ -22,8 +22,8 @@ export function calculateBookingAmounts(pricePerDay: number, days: number): {
   totalAmount: number;
 } {
   const rentalAmount = Math.round(days * pricePerDay * 100) / 100;
-  const vatAmount    = calculateVat(rentalAmount);
   const { feeAmount: platformFee } = calculatePlatformFee(pricePerDay, days, rentalAmount);
-  const totalAmount  = Math.round((rentalAmount + vatAmount + platformFee) * 100) / 100;
+  const vatAmount    = calculateVat(rentalAmount + platformFee);
+  const totalAmount  = Math.round((rentalAmount + platformFee + vatAmount) * 100) / 100;
   return { rentalAmount, vatAmount, platformFee, totalAmount };
 }
