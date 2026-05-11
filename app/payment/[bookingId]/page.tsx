@@ -372,7 +372,7 @@ function TestPaymentPanel({
 
 // ── Paystack return polling panel ─────────────────────────────────────────────
 
-function PaystackProcessing({ bookingId }: { bookingId: string }) {
+function PaystackProcessing({ bookingId, reference }: { bookingId: string; reference: string | null }) {
   const router = useRouter();
   const [dots, setDots] = useState(".");
 
@@ -382,6 +382,23 @@ function PaystackProcessing({ bookingId }: { bookingId: string }) {
   }, []);
 
   useEffect(() => {
+    // 1. If we have a reference, verify directly with Paystack first
+    if (reference) {
+      fetch("/api/payments/paystack/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference, bookingId }),
+      })
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.confirmed) {
+            router.replace(`/payment/${bookingId}?paystack_confirmed=1`);
+          }
+        })
+        .catch(() => {});
+    }
+
+    // 2. Poll booking status as fallback (webhook may arrive after verify)
     let attempts = 0;
     const poll = setInterval(async () => {
       attempts++;
@@ -396,7 +413,7 @@ function PaystackProcessing({ bookingId }: { bookingId: string }) {
       if (attempts >= 15) clearInterval(poll);
     }, 2000);
     return () => clearInterval(poll);
-  }, [bookingId, router]);
+  }, [bookingId, reference, router]);
 
   return (
     <div className={styles.payfastProcessing}>
@@ -542,6 +559,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
   const paystackProvider  = searchParams.get("provider") === "paystack";
   const paystackCancelled = paystackProvider && searchParams.get("cancelled") === "true";
   const paystackConfirmed = searchParams.get("paystack_confirmed") === "1";
+  const paystackReference = searchParams.get("reference") ?? searchParams.get("trxref") ?? null;
 
   useEffect(() => {
     if (paystackConfirmed && booking?.status === "CONFIRMED" && booking.payment) {
@@ -574,7 +592,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
       <div className={styles.page}>
         <Topbar />
         <div className={styles.body}>
-          <PaystackProcessing bookingId={bookingId} />
+          <PaystackProcessing bookingId={bookingId} reference={paystackReference} />
         </div>
       </div>
     );
