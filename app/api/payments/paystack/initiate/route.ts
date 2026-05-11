@@ -68,22 +68,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const txn = await initializeTransaction({
-    email: borrower.email,
-    amount,
-    reference,
-    callback_url: `${baseUrl}/payment/${bookingId}?provider=paystack&type=${type}`,
-    metadata: {
-      bookingId,
-      type,
-      custom_fields: [
-        { display_name: "Booking ID", variable_name: "bookingId", value: bookingId },
-        { display_name: "Type", variable_name: "type", value: type },
-      ],
-    },
-  });
+  try {
+    const txn = await initializeTransaction({
+      email: borrower.email,
+      amount,
+      reference,
+      callback_url: `${baseUrl}/payment/${bookingId}?provider=paystack&type=${type}`,
+      metadata: {
+        bookingId,
+        type,
+        custom_fields: [
+          { display_name: "Booking ID", variable_name: "bookingId", value: bookingId },
+          { display_name: "Type", variable_name: "type", value: type },
+        ],
+      },
+    });
 
-  console.log("[Paystack] initialized transaction:", reference, "| amount:", amount);
+    console.log("[Paystack] initialized transaction:", reference, "| amount:", amount);
 
-  return NextResponse.json({ data: { authorization_url: txn.authorization_url, reference: txn.reference } });
+    return NextResponse.json({ data: { authorization_url: txn.authorization_url, reference: txn.reference } });
+  } catch (err: any) {
+    console.error("[Paystack] initializeTransaction failed:", err?.message ?? err);
+    return NextResponse.json({ error: err?.message ?? "Failed to initialize Paystack transaction" }, { status: 502 });
+  }
 }
