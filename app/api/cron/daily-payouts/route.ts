@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/client";
-import { sendPayout } from "@/lib/payfast-payouts";
+import { sendTransfer } from "@/lib/paystack-transfers";
+
+const PLATFORM_FEE_RATE = 0.10; // 10% platform fee
 
 // Runs daily at 06:00. For every ACTIVE booking, creates a DailyPayout record
-// for today (idempotent) then transfers the amount to the lister's bank account.
+// for today (idempotent) then transfers the lender's net daily share via Paystack.
+//
+// Payout math:
+//   lenderPool  = totalAmount * (1 - PLATFORM_FEE_RATE)
+//   dailyAmount = lenderPool / numRentalDays
+//   Platform keeps the remaining 10% in the Paystack balance.
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-cron-secret") ?? req.headers.get("authorization")?.replace("Bearer ", "");
   if (secret !== process.env.CRON_SECRET) {
@@ -17,27 +24,36 @@ export async function POST(req: NextRequest) {
     where: {
       status: "ACTIVE",
       startDate: { lte: today },
-      endDate:   { gt: today },
+      endDate: { gt: today },
+      payment: { status: "SUCCEEDED" },
     },
     include: {
-      listing: { select: { ownerId: true, pricePerDay: true } },
+      listing: { select: { ownerId: true } },
+      payment: { select: { status: true } },
     },
   });
 
   const results = { created: 0, paid: 0, skipped: 0, failed: 0 };
 
   for (const booking of activeBookings) {
-    // Idempotently create the payout record
+    // Calculate net daily payout: lender gets 90% of totalAmount split across rental days
+    const numDays = Math.max(
+      1,
+      Math.round((booking.endDate.getTime() - booking.startDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
+    const lenderPool = booking.totalAmount * (1 - PLATFORM_FEE_RATE);
+    const dailyAmount = Math.round((lenderPool / numDays) * 100) / 100; // round to 2 dp
+
     let payout;
     try {
       payout = await db.dailyPayout.upsert({
         where: { bookingId_date: { bookingId: booking.id, date: today } },
         create: {
           bookingId: booking.id,
-          listerId:  booking.listing.ownerId,
-          date:      today,
-          amount:    booking.listing.pricePerDay,
-          status:    "PENDING",
+          listerId: booking.listing.ownerId,
+          date: today,
+          amount: dailyAmount,
+          status: "PENDING",
         },
         update: {},
       });
@@ -52,35 +68,30 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // Fetch lister's bank account details
     const lister = await db.user.findUnique({
       where: { id: booking.listing.ownerId },
       select: {
+        paystackRecipientCode: true,
         bankAccountHolder: true,
         bankName: true,
         bankAccountNumber: true,
-        bankAccountType: true,
         bankBranchCode: true,
       },
     });
 
-    if (!lister?.bankAccountHolder || !lister?.bankName || !lister?.bankAccountNumber || !lister?.bankAccountType) {
-      console.warn(`[daily-payouts] Lister ${booking.listing.ownerId} has no bank account — skipping payout ${payout.id}`);
+    if (!lister?.paystackRecipientCode) {
+      console.warn(`[daily-payouts] Lister ${booking.listing.ownerId} has no Paystack recipient code — skipping payout ${payout.id}`);
       results.skipped++;
       continue;
     }
 
     const dateStr = today.toISOString().slice(0, 10);
-    const result = await sendPayout({
-      listerId:          booking.listing.ownerId,
-      payoutId:          payout.id,
-      amount:            payout.amount,
-      bankAccountHolder: lister.bankAccountHolder,
-      bankName:          lister.bankName,
-      bankAccountNumber: lister.bankAccountNumber,
-      bankAccountType:   lister.bankAccountType ?? "cheque",
-      bankBranchCode:    lister.bankBranchCode ?? "",
-      reference:         `LendMe rental ${dateStr} booking ${booking.id.slice(-6)}`,
+    const result = await sendTransfer({
+      listerId: booking.listing.ownerId,
+      payoutId: payout.id,
+      amount: dailyAmount,
+      recipientCode: lister.paystackRecipientCode,
+      reference: `LendMe rental ${dateStr} booking ${booking.id.slice(-6)}`,
     });
 
     if (result.success) {

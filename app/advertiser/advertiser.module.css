@@ -1,0 +1,47 @@
+.shell {
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-1);
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  height: 64px;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-card);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.logoLink { text-decoration: none; }
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.navLink:hover { color: var(--text-1); }
+
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+
+@media (max-width: 768px) {
+  .header { padding: 0 20px; }
+  .main   { padding: 40px 16px; }
+}

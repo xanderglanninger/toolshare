@@ -15,6 +15,7 @@ const ADMIN_NAV = [
   { id: "kyc",     path: "/dashboard/admin/kyc",     label: "KYC Verifications", icon: "◈" },
   { id: "users",   path: "/dashboard/admin/users",   label: "User Management",   icon: "◉" },
   { id: "disputes",path: "/dashboard/admin/disputes",label: "Disputes",          icon: "⚑" },
+  { id: "ads",     path: "/dashboard/admin/ads",     label: "Sponsored Ads",     icon: "◎" },
 ];
 
 const NAV = [

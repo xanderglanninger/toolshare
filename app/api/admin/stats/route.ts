@@ -50,17 +50,17 @@ export async function GET() {
     prisma.booking.count({ where: { status: "COMPLETED" } }),
     prisma.booking.count({ where: { status: "CANCELLED" } }),
     prisma.booking.count({ where: { status: "PENDING" } }),
-    prisma.payment.aggregate({
-      where: { status: "SUCCEEDED" },
-      _sum: { amount: true },
+    prisma.booking.aggregate({
+      where: { status: "COMPLETED", payment: { status: "SUCCEEDED" } },
+      _sum: { platformFee: true },
     }),
-    prisma.payment.aggregate({
-      where: { status: "SUCCEEDED", paidAt: { gte: startOfMonth } },
-      _sum: { amount: true },
+    prisma.booking.aggregate({
+      where: { status: "COMPLETED", payment: { status: "SUCCEEDED" }, createdAt: { gte: startOfMonth } },
+      _sum: { platformFee: true },
     }),
-    prisma.payment.aggregate({
-      where: { status: "SUCCEEDED", paidAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
-      _sum: { amount: true },
+    prisma.booking.aggregate({
+      where: { status: "COMPLETED", payment: { status: "SUCCEEDED" }, createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
+      _sum: { platformFee: true },
     }),
     prisma.report.count({ where: { status: "PENDING" } }),
     prisma.report.count({ where: { status: "RESOLVED" } }),
@@ -78,10 +78,10 @@ export async function GET() {
         borrower: { select: { name: true } },
       },
     }),
-    // Revenue by month (last 6 months)
-    prisma.payment.findMany({
-      where: { status: "SUCCEEDED", paidAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } },
-      select: { amount: true, paidAt: true },
+    // Platform fee revenue by month (last 6 months)
+    prisma.booking.findMany({
+      where: { status: "COMPLETED", payment: { status: "SUCCEEDED" }, createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } },
+      select: { platformFee: true, createdAt: true },
     }),
     // Bookings by category
     prisma.booking.findMany({
@@ -106,23 +106,16 @@ export async function GET() {
     }),
   ]);
 
-  // Platform fee revenue (sum of platformFee on completed bookings)
-  const platformFeeData = await prisma.booking.aggregate({
-    where: { status: "COMPLETED", payment: { status: "SUCCEEDED" } },
-    _sum: { platformFee: true },
-  });
-
-  // Aggregate revenue by month
+  // Aggregate platform fee revenue by month
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const revenueMap: Record<string, number> = {};
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     revenueMap[`${d.getFullYear()}-${d.getMonth()}`] = 0;
   }
-  for (const p of revenueByMonth) {
-    if (!p.paidAt) continue;
-    const key = `${p.paidAt.getFullYear()}-${p.paidAt.getMonth()}`;
-    if (key in revenueMap) revenueMap[key] += p.amount;
+  for (const b of revenueByMonth) {
+    const key = `${b.createdAt.getFullYear()}-${b.createdAt.getMonth()}`;
+    if (key in revenueMap) revenueMap[key] += b.platformFee ?? 0;
   }
   const revenueChart = Object.entries(revenueMap).map(([key, amount]) => {
     const [year, month] = key.split("-").map(Number);
@@ -170,10 +163,9 @@ export async function GET() {
       pending: pendingBookings,
     },
     revenue: {
-      total: totalRevenue._sum.amount ?? 0,
-      thisMonth: revenueThisMonth._sum.amount ?? 0,
-      lastMonth: revenueLastMonth._sum.amount ?? 0,
-      platformFees: platformFeeData._sum.platformFee ?? 0,
+      total: totalRevenue._sum.platformFee ?? 0,
+      thisMonth: revenueThisMonth._sum.platformFee ?? 0,
+      lastMonth: revenueLastMonth._sum.platformFee ?? 0,
     },
     disputes: {
       pending: pendingDisputes,

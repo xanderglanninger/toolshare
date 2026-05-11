@@ -1,0 +1,212 @@
+.page {
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 860px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.03em;
+  margin-bottom: 2px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text-4);
+  margin-top: -24px;
+}
+
+.loading {
+  padding: 60px;
+  text-align: center;
+  color: var(--text-4);
+}
+
+/* ─── Create form ─────────────────────────────────────────────────────────── */
+.form {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.formTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.input {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-card-2);
+  color: var(--text-1);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.error {
+  font-size: 13px;
+  color: #ef4444;
+}
+
+.saveBtn {
+  align-self: flex-start;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1c1a17;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.saveBtn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.saveBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ─── Ad list ─────────────────────────────────────────────────────────────── */
+.adList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--text-4);
+  padding: 24px 0;
+}
+
+.adRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: opacity 0.2s;
+}
+
+.inactive { opacity: 0.5; }
+
+.adThumb {
+  width: 72px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.adInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.adTagline {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.adLink {
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.adActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.toggleBtn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+
+.activeBtn {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.inactiveBtn {
+  background: var(--bg-card-2);
+  color: var(--text-4);
+}
+
+.deleteBtn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: none;
+  transition: background 0.15s;
+}
+
+.deleteBtn:hover { background: rgba(239, 68, 68, 0.2); }
+
+@media (max-width: 768px) {
+  .page   { padding: 24px 16px; }
+  .fields { grid-template-columns: 1fr; }
+}

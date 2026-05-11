@@ -11,6 +11,18 @@ import {
 import styles from "./TodaysPicks.module.css";
 import type { Listing, ListingCategory } from "@/lib/types/listing";
 
+const AD_INTERVAL = 6; // insert one ad every N listing cards
+
+interface Ad {
+  id: string;
+  title: string;
+  tagline: string | null;
+  imageUrl: string | null;
+  linkUrl: string;
+  ctaText: string;
+  priceText: string | null;
+}
+
 const CATEGORY_ICONS: Record<ListingCategory, React.ReactElement> = {
   ELECTRONICS:           <Monitor size={28} />,
   TOOLS_EQUIPMENT:       <Wrench size={28} />,
@@ -100,6 +112,50 @@ function SkeletonCard() {
   );
 }
 
+function AdCard({ ad }: { ad: Ad }) {
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const hasImage = ad.imageUrl && !imgFailed;
+
+  return (
+    <a
+      href={ad.linkUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={styles.card}
+      style={{ textDecoration: "none" }}
+    >
+      <div className={styles.cardImg}>
+        {hasImage ? (
+          <img
+            src={ad.imageUrl!}
+            alt={ad.title}
+            className={styles.cardImgEl}
+            loading="lazy"
+            decoding="async"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className={styles.cardImgPlaceholder}>
+            <span className={styles.cardImgIcon}><Package size={28} /></span>
+          </div>
+        )}
+        <span className={`${styles.cardBadge} ${styles.sponsoredBadge}`}>Sponsored</span>
+      </div>
+      <div className={styles.cardBody}>
+        <div className={styles.cardPriceGroup}>
+          {ad.priceText ? (
+            <span className={styles.cardPrice} style={{ fontSize: 16 }}>{ad.priceText}</span>
+          ) : (
+            <span className={styles.adCta}>{ad.ctaText} →</span>
+          )}
+        </div>
+        <p className={styles.cardTitle}>{ad.title}</p>
+        {ad.tagline && <p className={styles.cardCity}>{ad.tagline}</p>}
+      </div>
+    </a>
+  );
+}
+
 function LoadingSpinner() {
   return (
     <div className={styles.spinnerWrap}>
@@ -118,6 +174,7 @@ export default function TodaysPicks() {
   const initialCategory = urlCategory && CATEGORIES.includes(urlCategory) ? urlCategory : null;
 
   const [items, setItems]                     = useState<Listing[]>([]);
+  const [ads, setAds]                         = useState<Ad[]>([]);
   const [hasMore, setHasMore]                 = useState(true);
   const [initialLoading, setInitialLoading]   = useState(true);
   const [loadingMore, setLoadingMore]         = useState(false);
@@ -136,6 +193,14 @@ export default function TodaysPicks() {
   const hasMoreRef    = useRef(true);
   const searchRef     = useRef("");
   const categoryRef   = useRef<ListingCategory | null>(null);
+
+  // Fetch ads once on mount
+  useEffect(() => {
+    fetch("/api/ads")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setAds(data); })
+      .catch(() => {});
+  }, []);
 
   // Debounce the search input
   useEffect(() => {
@@ -327,13 +392,20 @@ export default function TodaysPicks() {
       ) : (
         <>
           <div className={styles.grid}>
-            {items.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                onClick={() => router.push(`/listings/${listing.id}`)}
-              />
-            ))}
+            {items.map((listing, i) => {
+              const adIndex = Math.floor(i / AD_INTERVAL);
+              const showAdBefore = i > 0 && i % AD_INTERVAL === 0 && ads.length > 0;
+              const ad = ads[(adIndex - 1 + ads.length) % ads.length];
+              return (
+                <React.Fragment key={listing.id}>
+                  {showAdBefore && <AdCard key={`ad-${adIndex}`} ad={ad} />}
+                  <ListingCard
+                    listing={listing}
+                    onClick={() => router.push(`/listings/${listing.id}`)}
+                  />
+                </React.Fragment>
+              );
+            })}
           </div>
           {loadingMore && <LoadingSpinner />}
         </>

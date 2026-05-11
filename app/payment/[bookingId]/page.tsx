@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { loadStripe } from "@stripe/stripe-js";
@@ -64,9 +64,9 @@ function daysBetween(start: Date | string, end: Date | string) {
   return Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
 }
 
-// ── PayFast checkout ──────────────────────────────────────────────────────────
+// ── Paystack checkout ─────────────────────────────────────────────────────────
 
-function PayFastCheckoutForm({
+function PaystackCheckoutForm({
   booking,
   forDeposit = false,
   onInitiated,
@@ -75,44 +75,24 @@ function PayFastCheckoutForm({
   forDeposit?: boolean;
   onInitiated?: () => void;
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const amount = forDeposit ? (booking.depositAmount ?? 0) : booking.totalAmount;
 
-  async function handlePayFast() {
+  async function handlePaystack() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/payments/payfast/initiate", {
+      const res = await fetch("/api/payments/paystack/initiate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: booking.id, forDeposit }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to initiate payment");
-
-      const { params, url } = json.data as {
-        params: Record<string, string>;
-        url: string;
-      };
-
-      // Build a hidden form and submit it to PayFast
-      const form = formRef.current!;
-      form.action = url;
-      form.method = "POST";
-      // Clear any previous inputs
-      form.innerHTML = "";
-      for (const [key, value] of Object.entries(params)) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      }
       onInitiated?.();
-      form.submit();
+      window.location.href = json.data.authorization_url;
     } catch (e: any) {
       setError(e.message ?? "Something went wrong");
       setLoading(false);
@@ -124,55 +104,43 @@ function PayFastCheckoutForm({
     { icon: "🏦", label: "Instant EFT" },
     { icon: "📱", label: "SnapScan" },
     { icon: "🛒", label: "Mobicred" },
-    { icon: "🔢", label: "SCode" },
+    { icon: "🔢", label: "USSD" },
   ];
 
   return (
-    <>
-      <form ref={formRef} style={{ display: "none" }} />
-
-      <div className={styles.payfastCard}>
-        <div className={styles.payfastHeader}>
-          <img
-            src="https://www.payfast.co.za/images/logo.svg"
-            alt="PayFast"
-            className={styles.payfastLogo}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-          <span className={styles.payfastBadge}>Secure checkout</span>
-        </div>
-
-        <p className={styles.payfastSub}>
-          Pay via PayFast — South Africa's most trusted payment gateway. Multiple methods accepted:
-        </p>
-
-        <div className={styles.payfastMethods}>
-          {methods.map((m) => (
-            <div key={m.label} className={styles.payfastMethod}>
-              <span>{m.icon}</span>
-              <span>{m.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {error && <div className={styles.errorBox}>{error}</div>}
-
-        <div className={styles.secureNote}>
-          🔒 You will be redirected to PayFast to complete payment
-        </div>
-
-        <button
-          className={styles.payfastBtn}
-          disabled={loading}
-          onClick={handlePayFast}
-          type="button"
-        >
-          {loading ? "Redirecting…" : `Pay ${fmt(amount)} with PayFast`}
-        </button>
+    <div className={styles.payfastCard}>
+      <div className={styles.payfastHeader}>
+        <span className={styles.payfastBadge}>Secure checkout via Paystack</span>
       </div>
-    </>
+
+      <p className={styles.payfastSub}>
+        Pay securely via Paystack — multiple methods accepted:
+      </p>
+
+      <div className={styles.payfastMethods}>
+        {methods.map((m) => (
+          <div key={m.label} className={styles.payfastMethod}>
+            <span>{m.icon}</span>
+            <span>{m.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {error && <div className={styles.errorBox}>{error}</div>}
+
+      <div className={styles.secureNote}>
+        🔒 You will be redirected to Paystack to complete payment
+      </div>
+
+      <button
+        className={styles.payfastBtn}
+        disabled={loading}
+        onClick={handlePaystack}
+        type="button"
+      >
+        {loading ? "Redirecting…" : `Pay ${fmt(amount)} with Paystack`}
+      </button>
+    </div>
   );
 }
 
@@ -255,7 +223,7 @@ function DepositCheckoutForm({
   onSuccess,
 }: {
   booking: BookingWithDetails;
-  provider: "stripe" | "payfast";
+  provider: "stripe" | "paystack";
   onSuccess: () => void;
 }) {
   const stripe   = useStripe();
@@ -294,9 +262,9 @@ function DepositCheckoutForm({
     setPaying(false);
   }
 
-  if (provider === "payfast") {
+  if (provider === "paystack") {
     return (
-      <PayFastCheckoutForm
+      <PaystackCheckoutForm
         booking={booking}
         forDeposit
         onInitiated={() => {}}
@@ -402,9 +370,9 @@ function TestPaymentPanel({
   );
 }
 
-// ── PayFast return polling panel ──────────────────────────────────────────────
+// ── Paystack return polling panel ─────────────────────────────────────────────
 
-function PayFastProcessing({ bookingId }: { bookingId: string }) {
+function PaystackProcessing({ bookingId }: { bookingId: string }) {
   const router = useRouter();
   const [dots, setDots] = useState(".");
 
@@ -414,7 +382,6 @@ function PayFastProcessing({ bookingId }: { bookingId: string }) {
   }, []);
 
   useEffect(() => {
-    // Poll booking status every 2s for up to 30s
     let attempts = 0;
     const poll = setInterval(async () => {
       attempts++;
@@ -423,7 +390,7 @@ function PayFastProcessing({ bookingId }: { bookingId: string }) {
         const json = await r.json();
         if (json.data?.status === "CONFIRMED") {
           clearInterval(poll);
-          router.replace(`/payment/${bookingId}?payfast_confirmed=1`);
+          router.replace(`/payment/${bookingId}?paystack_confirmed=1`);
         }
       } catch {}
       if (attempts >= 15) clearInterval(poll);
@@ -436,7 +403,7 @@ function PayFastProcessing({ bookingId }: { bookingId: string }) {
       <div className={styles.payfastSpinner} />
       <p className={styles.payfastProcessingTitle}>Confirming your payment{dots}</p>
       <p className={styles.payfastProcessingSub}>
-        Please wait while we verify your PayFast payment. This usually takes a few seconds.
+        Please wait while we verify your Paystack payment. This usually takes a few seconds.
       </p>
     </div>
   );
@@ -444,21 +411,21 @@ function PayFastProcessing({ bookingId }: { bookingId: string }) {
 
 // ── Payment method selector ───────────────────────────────────────────────────
 
-type PayMethod = "payfast" | "stripe";
+type PayMethod = "paystack" | "stripe";
 
 function MethodSelector({
   selected,
   onChange,
   hasStripe,
-  hasPayFast,
+  hasPaystack,
 }: {
   selected: PayMethod;
   onChange: (m: PayMethod) => void;
   hasStripe: boolean;
-  hasPayFast: boolean;
+  hasPaystack: boolean;
 }) {
-  if (!hasStripe && !hasPayFast) return null;
-  if (!hasStripe || !hasPayFast) return null; // Only show selector when both are available
+  if (!hasStripe && !hasPaystack) return null;
+  if (!hasStripe || !hasPaystack) return null;
 
   return (
     <div className={styles.methodSelector}>
@@ -466,15 +433,15 @@ function MethodSelector({
       <div className={styles.methodOptions}>
         <button
           type="button"
-          className={`${styles.methodOption} ${selected === "payfast" ? styles.methodOptionActive : ""}`}
-          onClick={() => onChange("payfast")}
+          className={`${styles.methodOption} ${selected === "paystack" ? styles.methodOptionActive : ""}`}
+          onClick={() => onChange("paystack")}
         >
           <span className={styles.methodOptionIcon}>🇿🇦</span>
           <div className={styles.methodOptionInfo}>
-            <span className={styles.methodOptionName}>PayFast</span>
+            <span className={styles.methodOptionName}>Paystack</span>
             <span className={styles.methodOptionSub}>EFT · Card · SnapScan · Mobicred</span>
           </div>
-          {selected === "payfast" && <span className={styles.methodOptionCheck}>✓</span>}
+          {selected === "paystack" && <span className={styles.methodOptionCheck}>✓</span>}
         </button>
 
         <button
@@ -509,18 +476,16 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
   const [depositPaid, setDepositPaid]                 = useState(false);
   const [intentError, setIntentError]                 = useState("");
   const [success, setSuccess]                         = useState<{ paymentReference: string } | null>(null);
-  const [payMethod, setPayMethod]                     = useState<PayMethod>("payfast");
+  const [payMethod, setPayMethod]                     = useState<PayMethod>("paystack");
 
-  const hasPayFast = true; // always offer PayFast; initiate API returns 503 if not configured
-  const hasStripe  = Boolean(stripePromise);
+  const hasPaystack = true; // always offer Paystack; initiate API returns 503 if not configured
+  const hasStripe   = Boolean(stripePromise);
 
-  // Default to Stripe if PayFast is not enabled
   useEffect(() => {
-    if (!hasPayFast && hasStripe) setPayMethod("stripe");
-    else if (hasPayFast) setPayMethod("payfast");
-  }, [hasPayFast, hasStripe]);
+    if (!hasPaystack && hasStripe) setPayMethod("stripe");
+    else if (hasPaystack) setPayMethod("paystack");
+  }, [hasPaystack, hasStripe]);
 
-  // Fetch booking
   useEffect(() => {
     fetch(`/api/bookings/${bookingId}`)
       .then((r) => r.json())
@@ -532,7 +497,6 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
       .finally(() => setLoading(false));
   }, [bookingId]);
 
-  // Create (or reuse) Stripe PaymentIntents — only when Stripe is configured
   useEffect(() => {
     if (!booking || booking.status !== "PENDING" || !stripePromise) return;
     fetch("/api/payments/create-intent", {
@@ -552,7 +516,6 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
       .catch(() => setIntentError("Failed to initialise payment."));
   }, [booking, bookingId]);
 
-  // Handle Stripe redirect returns (3-D Secure flows)
   useEffect(() => {
     const p        = new URLSearchParams(window.location.search);
     const status   = p.get("redirect_status");
@@ -572,22 +535,20 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
     }
   }, [bookingId]);
 
-  // ── PayFast return handling ────────────────────────────────────────────────
+  // ── Paystack return handling ──────────────────────────────────────────────
   const searchParams = typeof window !== "undefined"
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams();
-  const payfastProvider   = searchParams.get("provider") === "payfast";
-  const payfastCancelled  = payfastProvider && searchParams.get("cancelled") === "true";
-  const payfastConfirmed  = searchParams.get("payfast_confirmed") === "1";
+  const paystackProvider  = searchParams.get("provider") === "paystack";
+  const paystackCancelled = paystackProvider && searchParams.get("cancelled") === "true";
+  const paystackConfirmed = searchParams.get("paystack_confirmed") === "1";
 
-  // Show success when booking confirmed (via PayFast polling redirect)
   useEffect(() => {
-    if (payfastConfirmed && booking?.status === "CONFIRMED" && booking.payment) {
-      setSuccess({ paymentReference: booking.payment.paymentReference ?? "payfast" });
+    if (paystackConfirmed && booking?.status === "CONFIRMED" && booking.payment) {
+      setSuccess({ paymentReference: booking.payment.paymentReference ?? "paystack" });
     }
-  }, [payfastConfirmed, booking]);
+  }, [paystackConfirmed, booking]);
 
-  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className={styles.page}>
@@ -597,7 +558,6 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
     );
   }
 
-  // ── Not found ─────────────────────────────────────────────────────────────
   if (notFound || !booking) {
     return (
       <div className={styles.page}>
@@ -607,28 +567,28 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
     );
   }
 
-  // ── PayFast: user returned but payment still processing ───────────────────
-  if (payfastProvider && !payfastCancelled && !payfastConfirmed &&
+  // ── Paystack: user returned but payment still processing ──────────────────
+  if (paystackProvider && !paystackCancelled && !paystackConfirmed &&
       booking.status !== "CONFIRMED") {
     return (
       <div className={styles.page}>
         <Topbar />
         <div className={styles.body}>
-          <PayFastProcessing bookingId={bookingId} />
+          <PaystackProcessing bookingId={bookingId} />
         </div>
       </div>
     );
   }
 
-  // ── PayFast: cancelled ────────────────────────────────────────────────────
-  if (payfastCancelled) {
+  // ── Paystack: cancelled ───────────────────────────────────────────────────
+  if (paystackCancelled) {
     return (
       <div className={styles.page}>
         <Topbar />
         <div className={styles.successPage}>
           <div className={styles.successIcon} style={{ borderColor: "#ef4444", background: "rgba(239,68,68,0.1)" }}>✕</div>
           <h1 className={styles.successTitle}>Payment cancelled</h1>
-          <p className={styles.successSub}>Your PayFast payment was cancelled. No charge was made.</p>
+          <p className={styles.successSub}>Your payment was cancelled. No charge was made.</p>
           <button className={styles.dashBtn} onClick={() => router.replace(`/payment/${bookingId}`)}>
             Try again
           </button>
@@ -659,7 +619,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
     );
   }
 
-  // ── Rental paid — now pay deposit if required ────────────────────────────
+  // ── Rental paid — now pay deposit if required (Stripe) ────────────────────
   if (success && depositClientSecret && !depositPaid) {
     return (
       <div className={styles.page}>
@@ -687,7 +647,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
     );
   }
 
-  // ── Rental paid via PayFast, deposit required ────────────────────────────
+  // ── Rental paid via Paystack, deposit required ────────────────────────────
   if (success && booking.depositAmount && !depositPaid && !depositClientSecret) {
     return (
       <div className={styles.page}>
@@ -700,7 +660,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
               Now pay the refundable deposit of <strong>{fmt(booking.depositAmount ?? 0)}</strong>.
             </p>
           </div>
-          <PayFastCheckoutForm booking={booking} forDeposit onInitiated={() => {}} />
+          <PaystackCheckoutForm booking={booking} forDeposit onInitiated={() => {}} />
         </div>
       </div>
     );
@@ -835,12 +795,12 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           selected={payMethod}
           onChange={setPayMethod}
           hasStripe={hasStripe || TEST_MODE}
-          hasPayFast={hasPayFast}
+          hasPaystack={hasPaystack}
         />
 
-        {/* PayFast */}
-        {payMethod === "payfast" && hasPayFast && (
-          <PayFastCheckoutForm
+        {/* Paystack */}
+        {payMethod === "paystack" && hasPaystack && (
+          <PaystackCheckoutForm
             booking={booking}
             onInitiated={() => {}}
           />
@@ -872,10 +832,9 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
               </>
             )}
 
-            {!TEST_MODE && !stripePromise && !hasPayFast && (
+            {!TEST_MODE && !stripePromise && (
               <div className={styles.errorBox}>
-                No payment method is configured. Set <code>NEXT_PUBLIC_PAYFAST_ENABLED=true</code>{" "}
-                or <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
+                No payment method is configured. Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>.
               </div>
             )}
 
@@ -888,11 +847,6 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
 
             {intentError && <div className={styles.errorBox}>{intentError}</div>}
           </>
-        )}
-
-        {/* Fallback: PayFast only, no Stripe at all */}
-        {!hasStripe && !TEST_MODE && hasPayFast && payMethod !== "payfast" && (
-          <PayFastCheckoutForm booking={booking} onInitiated={() => {}} />
         )}
 
       </div>

@@ -483,6 +483,19 @@
   transform: translateY(-1px);
 }
 
+/* ─── Sponsored badge ────────────────────────────────────────────────────── */
+.sponsoredBadge {
+  background: rgba(245, 168, 0, 0.18);
+  color: var(--accent);
+  border-color: rgba(245, 168, 0, 0.25);
+}
+
+.adCta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 .cardSkeleton {
   border-radius: 14px;

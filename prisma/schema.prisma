@@ -39,6 +39,7 @@ model User {
   bankAccountNumber    String?
   bankAccountType      String?   @default("cheque")
   bankBranchCode       String?
+  paystackRecipientCode String?  // Paystack transfer recipient code
   threadParticipations MessageThreadParticipant[]
   sentMessages         Message[]                  @relation("SentMessages")
   reportsMade          Report[]                   @relation("ReportsMade")
@@ -47,6 +48,7 @@ model User {
   reviewsReceived      Review[]                   @relation("ReviewsReceived")
   notifications        Notification[]
   disputeEvidence      DisputeEvidence[]
+  ads                  Ad[]      @relation("AdvertiserAds")
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 }
@@ -333,9 +335,9 @@ model Payment {
   refundedAmount        Float?
   stripeRefundId        String?
 
-  // PayFast
-  provider              String        @default("STRIPE")
-  payfastPaymentId      String?
+  // Payment provider
+  provider              String        @default("PAYSTACK")
+  paystackReference     String?
 
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
@@ -367,7 +369,7 @@ model DailyPayout {
   amount      Float     // pricePerDay for that booking
   status      String    @default("PENDING") // PENDING | PAID | FAILED
   paidAt      DateTime?
-  reference   String?   // bank transfer / PayFast payout reference
+  reference   String?   // Paystack transfer_code
   createdAt   DateTime  @default(now())
 
   @@unique([bookingId, date])
@@ -542,4 +544,36 @@ model Notification {
   createdAt DateTime         @default(now())
 
   @@index([userId])
+}
+
+// ─── Sponsored Ads ────────────────────────────────────────────────────────────
+
+enum AdStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  PAUSED
+  EXPIRED
+  REJECTED
+}
+
+model Ad {
+  id           String    @id @default(cuid())
+  title        String
+  tagline      String?
+  imageUrl     String?
+  linkUrl      String
+  ctaText      String    @default("Learn More")
+  priceText    String?
+  active       Boolean   @default(true)
+  status       AdStatus  @default(PENDING_PAYMENT)
+  planDays     Int?
+  planPrice    Float?
+  startsAt     DateTime?
+  endsAt       DateTime?
+  advertiserId String?
+  advertiser   User?     @relation("AdvertiserAds", fields: [advertiserId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([advertiserId])
 }
