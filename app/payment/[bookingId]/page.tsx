@@ -699,7 +699,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
           <div className={styles.successRef}>
             Reference: <strong>{success.paymentReference}</strong>
           </div>
-          <p style={{ fontSize: "0.8rem", color: "#c8a84b", marginBottom: "1rem" }}>
+          <p style={{ fontSize: "0.8rem", color: "var(--text-3)", marginBottom: "1rem" }}>
             🔒 Your rental payment is held in escrow — protected until both parties confirm the return.
           </p>
           <button className={styles.dashBtn} onClick={() => router.push("/dashboard?tab=bookings")}>
@@ -717,7 +717,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
     <div className={styles.page}>
       <nav className={styles.topbar}>
         <button className={styles.backBtn} onClick={() => router.back()}>← Back</button>
-        <Logo size="sm" variant="dark" />
+        <Logo size="sm" />
       </nav>
 
       <div className={styles.body}>
@@ -799,8 +799,8 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
         </div>
 
         <div style={{
-          background: "#1c1a17", border: "1px solid #2e2b24", borderRadius: 8,
-          padding: "0.75rem 1rem", fontSize: "0.82rem", color: "#c8a84b",
+          background: "var(--accent-soft)", border: "1px solid var(--accent-soft-border)", borderRadius: 8,
+          padding: "0.75rem 1rem", fontSize: "0.82rem", color: "var(--text-2)",
           marginBottom: "1rem", lineHeight: 1.5,
         }}>
           🔒 <strong>Escrow protection:</strong> Your rental payment is held securely by us and paid
@@ -875,10 +875,7 @@ export default function PaymentPage({ params }: { params: Promise<{ bookingId: s
 function Topbar() {
   return (
     <nav className={styles.topbar}>
-      <div className={styles.topbarLogo}>
-        <span className={styles.logoBox}>lend</span>
-        <span className={styles.logoSuffix}>me</span>
-      </div>
+      <Logo size="sm" />
     </nav>
   );
 }

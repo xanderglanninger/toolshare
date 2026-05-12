@@ -488,6 +488,25 @@ model DisputeEvidence {
   @@index([reportId])
 }
 
+// ─── Platform Withdrawals ─────────────────────────────────────────────────────
+
+enum WithdrawalStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model PlatformWithdrawal {
+  id               String           @id @default(cuid())
+  amount           Float
+  currency         String           @default("ZAR")
+  status           WithdrawalStatus @default(PENDING)
+  paystackRef      String?
+  note             String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
 // ─── Reviews ─────────────────────────────────────────────────────────────────
 
 model Review {

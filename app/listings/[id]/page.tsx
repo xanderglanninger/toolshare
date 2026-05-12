@@ -479,17 +479,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
             {listing.isAvailable ? "Book this item" : "Currently unavailable"}
           </p>
 
-          {!isOwn && (
-            <button
-              className={styles.msgBtn}
-              disabled={messaging}
-              onClick={handleMessage}
-            >
-              {messaging && <Spinner />} {messaging ? "Opening chat…" : "✉ Message owner"}
-            </button>
-          )}
-
-          {/* Availability summary + calendar button */}
+          {/* Availability + calendar */}
           {availability && (
             <div className={styles.availRow}>
               <div className={styles.availBadge}>
@@ -501,13 +491,23 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                   : unitsAvailable === null
                   ? `${availability.quantity} units total`
                   : unitsAvailable === 0
-                  ? `All ${availability.quantity} units booked for those dates`
+                  ? `All ${availability.quantity} units booked`
                   : `${unitsAvailable} of ${availability.quantity} available`}
               </div>
               <button className={styles.calBtn} onClick={() => setShowCalendar(true)}>
                 📅 Check availability
               </button>
             </div>
+          )}
+
+          {!isOwn && (
+            <button
+              className={styles.msgBtn}
+              disabled={messaging}
+              onClick={handleMessage}
+            >
+              {messaging && <Spinner />} {messaging ? "Opening chat…" : "✉ Message owner"}
+            </button>
           )}
 
           {!canBook ? (
@@ -555,7 +555,7 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
               <div className={styles.fieldFull}>
                 <label className={styles.label} htmlFor="notes" style={{ display: "flex", justifyContent: "space-between" }}>
                   <span>Message to owner (optional)</span>
-                  <span style={{ fontWeight: 400, color: notes.length > 360 ? "#f87171" : "var(--text-3, #aaa)", fontSize: "0.75rem" }}>
+                  <span style={{ fontWeight: 400, color: notes.length > 360 ? "#f87171" : "var(--text-4)", fontSize: "0.75rem" }}>
                     {notes.length}/400
                   </span>
                 </label>
@@ -569,85 +569,35 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                 />
               </div>
 
-              {/* Price summary */}
+              {/* Price breakdown — flat rows, no nested box */}
               {days > 0 && (
                 <div className={styles.summary}>
                   <div className={styles.summaryRow}>
-                    <span className={styles.summaryLabel}>Duration</span>
-                    <span className={styles.summaryValue}>{days} day{days !== 1 ? "s" : ""}</span>
-                  </div>
-                  <div className={styles.summaryRow}>
-                    <span className={styles.summaryLabel}>Rate</span>
-                    <span className={styles.summaryValue}>
+                    <span className={styles.summaryLabel}>
                       {days >= 28 && listing.pricePerMonth
-                        ? `${fmt(listing.pricePerMonth)} / month`
+                        ? `${fmt(listing.pricePerMonth)} × ${Math.ceil(days / 30)} mo`
                         : days >= 7 && listing.pricePerWeek
-                        ? `${fmt(listing.pricePerWeek)} / week`
-                        : `${fmt(listing.pricePerDay)} / day`}
+                        ? `${fmt(listing.pricePerWeek)} × ${Math.ceil(days / 7)} wk`
+                        : `${fmt(listing.pricePerDay)} × ${days} day${days !== 1 ? "s" : ""}`}
                     </span>
-                  </div>
-                  <div className={styles.summaryDivider} />
-                  <div className={styles.summaryRow}>
-                    <span className={styles.summaryLabel}>Rental cost</span>
                     <span className={styles.summaryValue}>{fmt(rentalTotal)}</span>
                   </div>
                   <div className={styles.summaryRow}>
-                    <span className={styles.summaryLabel}>
-                      Service fee ({feePercent.toFixed(1)}%)
-                    </span>
+                    <span className={styles.summaryLabel}>Service fee ({feePercent.toFixed(1)}%)</span>
                     <span className={styles.summaryValue}>{fmt(feeAmount)}</span>
                   </div>
                   <div className={styles.summaryDivider} />
                   <div className={styles.summaryTotal}>
-                    <span>Rental total</span>
+                    <span>Total</span>
                     <span className={styles.summaryTotalValue}>{fmt(rentalTotal + feeAmount)}</span>
                   </div>
+                  {listing.depositAmount && (
+                    <div className={styles.depositRow}>
+                      <span>Refundable deposit</span>
+                      <span>{fmt(listing.depositAmount)}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* Rec #9: Deposit displayed separately so borrowers understand it's refundable */}
-              {days > 0 && listing.depositAmount && (
-                <div style={{
-                  marginTop: 8,
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "var(--surface-2, #f0f4ff)",
-                  border: "1px solid var(--border, #dde3f0)",
-                  fontSize: "0.82rem",
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 600 }}>
-                    <span>🔒 Refundable deposit</span>
-                    <span>{fmt(listing.depositAmount)}</span>
-                  </div>
-                  <p style={{ margin: "4px 0 0", color: "var(--text-3, #888)", fontSize: "0.76rem" }}>
-                    Held in escrow. Returned within 48 hours of confirmed return — provided no damage is reported.
-                  </p>
-                </div>
-              )}
-
-              {/* Rec #5: Cancellation policy with exact tier dates */}
-              {days > 0 && startDate && (
-                <details style={{ marginTop: 10, fontSize: "0.8rem", color: "var(--text-3, #888)" }}>
-                  <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text-2, #555)", listStyle: "none" }}>
-                    📋 Cancellation policy
-                  </summary>
-                  <div style={{ marginTop: 6, lineHeight: 1.6 }}>
-                    {(() => {
-                      const start = new Date(startDate);
-                      const fullRefundBefore = new Date(start.getTime() - 7 * 86400000);
-                      const halfRefundBefore = new Date(start.getTime() - 3 * 86400000);
-                      const fmtDate = (d: Date) => d.toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
-                      return (
-                        <>
-                          <div>✅ <strong>Full refund</strong> — cancel before {fmtDate(fullRefundBefore)}</div>
-                          <div>⚠️ <strong>50% refund</strong> — cancel {fmtDate(fullRefundBefore)} to {fmtDate(halfRefundBefore)}</div>
-                          <div>❌ <strong>No refund</strong> — cancel within 3 days of start</div>
-                          <div style={{ marginTop: 4 }}>If the owner cancels, you always receive a full refund.</div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </details>
               )}
 
               {bookingError && (
@@ -663,13 +613,13 @@ export default function ListingPage({ params }: { params: Promise<{ id: string }
                 {submitting
                   ? "Creating booking…"
                   : days > 0
-                  ? `Book · ${fmt(rentalTotal + feeAmount)}${listing.depositAmount ? ` + ${fmt(listing.depositAmount)} deposit` : ""}`
+                  ? `Book · ${fmt(rentalTotal + feeAmount)}`
                   : "Select dates to book"}
               </button>
 
-              <p className={styles.bookBtnNote}>
-                You&apos;ll be taken to payment after booking.
-              </p>
+              {days > 0 && listing.depositAmount && (
+                <p className={styles.bookBtnNote}>+ {fmt(listing.depositAmount)} refundable deposit due at checkout</p>
+              )}
             </>
           )}
         </aside>

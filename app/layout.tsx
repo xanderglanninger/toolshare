@@ -9,7 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `
           try {
             var t = localStorage.getItem('lendme-theme');
-            if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
           } catch(e) {}
         `}} />
       </head>

@@ -7,10 +7,53 @@
   --accent:             #f5a800;
   --accent-hover:       #e09900;
   --accent-active:      #cc8c00;
-  --accent-soft:        rgba(245, 168, 0, 0.12);
-  --accent-soft-border: rgba(245, 168, 0, 0.3);
+  --accent-soft:        rgba(245, 168, 0, 0.10);
+  --accent-soft-border: rgba(245, 168, 0, 0.25);
 
-  /* Dark mode backgrounds (defaults) */
+  /* Light mode backgrounds (defaults) */
+  --bg-base:   #f7f8fa;
+  --bg-deep:   #eef0f5;
+  --bg-card:   #ffffff;
+  --bg-card-2: #f4f6f9;
+  --bg-card-3: #edf0f5;
+  --bg-input:  #ffffff;
+  --bg-hover:  #f0f2f7;
+
+  /* Light mode borders */
+  --border-1: #e3e7ef;
+  --border-2: #c9d0df;
+  --border-3: #9daabf;
+
+  /* Light mode text */
+  --text-1: #111827;
+  --text-2: #374151;
+  --text-3: #6b7280;
+  --text-4: #9ca3af;
+  --text-5: #d1d5db;
+  --text-6: #e5e7eb;
+
+  /* Grid pattern stripe */
+  --stripe: rgba(15, 23, 42, 0.025);
+
+  /* Sidebar */
+  --sidebar-bg:              #f4f6f9;
+  --sidebar-border:          #dde2ec;
+  --sidebar-stripe-a:        #f5a800;
+  --sidebar-stripe-b:        #ffffff;
+  --sidebar-nav-color:       #6b7280;
+  --sidebar-nav-hover-bg:    #f4f6f9;
+  --sidebar-nav-hover-color: #374151;
+  --sidebar-admin-border:    #e3e7ef;
+  --sidebar-bottom-border:   #e3e7ef;
+  --sidebar-btn-border:      #e3e7ef;
+  --sidebar-btn-color:       #6b7280;
+  --sidebar-user-name:       #111827;
+  --sidebar-user-email:      #9ca3af;
+  --sidebar-user-arrow:      #9ca3af;
+}
+
+[data-theme="dark"] {
+  /* Dark mode backgrounds */
   --bg-base:   #2a2720;
   --bg-deep:   #201e1a;
   --bg-card:   #2e2b24;
@@ -34,33 +77,25 @@
 
   /* Grid pattern stripe */
   --stripe: rgba(255, 255, 255, 0.05);
-}
 
-[data-theme="light"] {
-  /* Light mode backgrounds */
-  --bg-base:   #f1f5f9;
-  --bg-deep:   #e8edf5;
-  --bg-card:   #ffffff;
-  --bg-card-2: #f8fafc;
-  --bg-card-3: #f1f5f9;
-  --bg-input:  #ffffff;
-  --bg-hover:  #f1f5f9;
+  --accent-soft:        rgba(245, 168, 0, 0.12);
+  --accent-soft-border: rgba(245, 168, 0, 0.3);
 
-  /* Light mode borders */
-  --border-1: #e2e8f0;
-  --border-2: #cbd5e1;
-  --border-3: #94a3b8;
-
-  /* Light mode text */
-  --text-1: #0f172a;
-  --text-2: #1e293b;
-  --text-3: #475569;
-  --text-4: #94a3b8;
-  --text-5: #cbd5e1;
-  --text-6: #e2e8f0;
-
-  /* Grid pattern stripe */
-  --stripe: rgba(15, 23, 42, 0.03);
+  /* Sidebar (dark mode) */
+  --sidebar-bg:              #141210;
+  --sidebar-border:          #2e2b24;
+  --sidebar-stripe-a:        #f5a800;
+  --sidebar-stripe-b:        #141210;
+  --sidebar-nav-color:       #7a7060;
+  --sidebar-nav-hover-bg:    #1c1a17;
+  --sidebar-nav-hover-color: #c8bfad;
+  --sidebar-admin-border:    #2a2720;
+  --sidebar-bottom-border:   #2e2b24;
+  --sidebar-btn-border:      #2e2b24;
+  --sidebar-btn-color:       #5a5448;
+  --sidebar-user-name:       #f5f0e8;
+  --sidebar-user-email:      #5a5448;
+  --sidebar-user-arrow:      #5a5448;
 }
 
 /* ─── Reset ───────────────────────────────────────────────────────────────── */

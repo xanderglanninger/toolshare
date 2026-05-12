@@ -46,7 +46,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { userImage, notifUnread, setNotifUnread, idVerificationStatus, setIdVerificationStatus, hasBankAccount, setHasBankAccount, showListingGate, setShowListingGate, isAdmin } = useDashboard();
+  const { userImage, notifUnread, setNotifUnread, idVerificationStatus, setIdVerificationStatus, hasBankAccount, setHasBankAccount, showListingGate, setShowListingGate, isAdmin, theme } = useDashboard();
 
   const [sideOpen, setSideOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -67,6 +67,55 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     setSideOpen(false);
     setDropdownOpen(false);
   }
+
+  const MOBILE_NAV = [
+    { id: "picks",         path: "/dashboard",                  label: "Home" },
+    { id: "listings",      path: "/dashboard/listings",         label: "Listings" },
+    { id: "bookings",      path: "/dashboard/bookings",         label: "Bookings" },
+    { id: "messages",      path: "/dashboard/messages",         label: "Messages" },
+    { id: "notifications", path: "/dashboard/notifications",    label: "Alerts" },
+    { id: "profile",       path: "/dashboard/settings",         label: "Profile" },
+  ];
+
+  // SVG icons for mobile bottom nav
+  const mobileNavIcons: Record<string, React.ReactNode> = {
+    picks: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    ),
+    listings: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+    ),
+    bookings: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    ),
+    messages: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
+    notifications: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+    ),
+    profile: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  };
 
   function handleNotifNavigate(tab: string, linkData?: string) {
     setNotifUnread(0);
@@ -95,7 +144,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* ── Sidebar ── */}
       <aside className={`${styles.sidebar}${sideOpen ? " " + styles.sideOpen : ""}`}>
         <div className={styles.sideTop}>
-          <Logo size="md" variant="dark" />
+          <Logo size="md" variant={theme === "dark" ? "dark" : "light"} />
           <nav className={styles.nav}>
             {NAV.map((item) => (
               <button
@@ -135,7 +184,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* ── Main ── */}
       <main className={styles.main}>
         <header className={styles.topbar}>
-          <button className={styles.menuBtn} onClick={() => setSideOpen(true)}>☰</button>
           <div className={styles.topbarRight}>
             <span className={styles.topbarGreeting}>
               Hey, <strong>{firstName}</strong>
@@ -201,6 +249,30 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         >
           ＋
         </button>
+
+        {/* ── Mobile bottom nav ── */}
+        <nav className={styles.mobileBottomNav}>
+          {MOBILE_NAV.map((item) => (
+            <button
+              key={item.id}
+              className={`${styles.mobileNavItem}${isActive(item.path) ? " " + styles.mobileNavActive : ""}`}
+              onClick={() => navigate(item.path)}
+              aria-label={item.label}
+            >
+              <span className={styles.mobileNavIcon}>
+                {item.id === "notifications" && notifUnread > 0
+                  ? <span style={{ position: "relative", display: "inline-flex" }}>
+                      {mobileNavIcons[item.id]}
+                      <span style={{ position: "absolute", top: -4, right: -6, background: "#f5a800", color: "#1c1a17", borderRadius: "50%", fontSize: 9, fontWeight: 700, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                        {notifUnread > 99 ? "99+" : notifUnread}
+                      </span>
+                    </span>
+                  : mobileNavIcons[item.id]}
+              </span>
+              <span className={styles.mobileNavLabel}>{item.label}</span>
+            </button>
+          ))}
+        </nav>
       </main>
 
       {showListingGate && (

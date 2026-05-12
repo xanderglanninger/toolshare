@@ -25,7 +25,7 @@ export const useDashboard = () => useContext(DashboardContext);
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const [userImage, setUserImage] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [notifUnread, setNotifUnread] = useState(0);
   const [idVerificationStatus, setIdVerificationStatus] = useState("unverified");
   const [hasBankAccount, setHasBankAccount] = useState<boolean | null>(null);
@@ -36,7 +36,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem("lendme-theme") as "dark" | "light" | null;
-      if (stored) setTheme(stored);
+      if (stored) {
+        setTheme(stored);
+        if (stored === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      }
     } catch {}
   }, []);
 
@@ -72,8 +77,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    if (next === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
+    if (next === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
     } else {
       document.documentElement.removeAttribute("data-theme");
     }

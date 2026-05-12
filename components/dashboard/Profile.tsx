@@ -13,6 +13,18 @@ interface BankAccount {
   bankBranchCode: string;
 }
 
+const SA_BANKS: { name: string; code: string }[] = [
+  { name: "ABSA",           code: "632005" },
+  { name: "Capitec",        code: "470010" },
+  { name: "FNB",            code: "250655" },
+  { name: "Nedbank",        code: "198765" },
+  { name: "Standard Bank",  code: "051001" },
+  { name: "Investec",       code: "580105" },
+  { name: "African Bank",   code: "430000" },
+  { name: "TymeBank",       code: "678910" },
+  { name: "Discovery Bank", code: "679000" },
+];
+
 interface Props {
   onImageUpdate?: (url: string) => void;
   theme: "dark" | "light";
@@ -59,8 +71,9 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
     bankAccountHolder: "", bankName: "", bankAccountNumber: "",
     bankAccountType: "cheque", bankBranchCode: "",
   });
-  const [bankSaving, setBankSaving] = useState(false);
-  const [bankLoaded, setBankLoaded] = useState(false);
+  const [bankSaving,        setBankSaving]        = useState(false);
+  const [bankLoaded,        setBankLoaded]        = useState(false);
+  const [hasPayoutAccount,  setHasPayoutAccount]  = useState(false);
 
   const [toast, setToast] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
 
@@ -94,6 +107,7 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
           bankAccountType:   json.data.bankAccountType   ?? "cheque",
           bankBranchCode:    json.data.bankBranchCode    ?? "",
         });
+        setHasPayoutAccount(!!json.data.hasPayoutAccount);
       }
     } catch {}
     setBankLoaded(true);
@@ -101,7 +115,7 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
 
   async function handleBankSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!bank.bankAccountHolder || !bank.bankName || !bank.bankAccountNumber || !bank.bankAccountType) {
+    if (!bank.bankAccountHolder || !bank.bankName || !bank.bankAccountNumber || !bank.bankAccountType || !bank.bankBranchCode) {
       showToast("Please fill in all required bank account fields.", "err"); return;
     }
     setBankSaving(true);
@@ -113,7 +127,8 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to save bank account");
-      showToast("Bank account saved!", "ok");
+      setHasPayoutAccount(true);
+      showToast("Bank account connected! You will receive daily EFT payouts.", "ok");
     } catch (err: any) {
       showToast(err.message ?? "Something went wrong.", "err");
     } finally {
@@ -566,10 +581,15 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
             <div>
               <p className={styles.sectionTitle}>Payout Account</p>
               <p className={styles.sectionSub}>
-                Your South African bank account for receiving daily rental payments.
+                Your South African bank account for receiving daily EFT rental payments.
               </p>
             </div>
           </div>
+          {bankLoaded && (
+            <span className={`${styles.chip} ${hasPayoutAccount ? styles.chipGreen : styles.chipGrey}`}>
+              {hasPayoutAccount ? "✓ Connected" : "Not connected"}
+            </span>
+          )}
         </div>
         <div className={styles.sectionBody}>
           {!bankLoaded ? (
@@ -587,20 +607,23 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
                     placeholder="Full name as on bank account" />
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Bank name *</label>
-                  <select className={styles.input} value={bank.bankName}
-                    onChange={e => setBank(b => ({ ...b, bankName: e.target.value }))}>
+                  <label className={styles.label}>Bank *</label>
+                  <select
+                    className={styles.input}
+                    value={bank.bankName}
+                    onChange={e => {
+                      const selected = SA_BANKS.find(b => b.name === e.target.value);
+                      setBank(b => ({
+                        ...b,
+                        bankName:      e.target.value,
+                        bankBranchCode: selected?.code ?? b.bankBranchCode,
+                      }));
+                    }}
+                  >
                     <option value="">Select bank…</option>
-                    <option>ABSA</option>
-                    <option>Capitec</option>
-                    <option>FNB</option>
-                    <option>Nedbank</option>
-                    <option>Standard Bank</option>
-                    <option>Investec</option>
-                    <option>African Bank</option>
-                    <option>TymeBank</option>
-                    <option>Discovery Bank</option>
-                    <option>Other</option>
+                    {SA_BANKS.map(b => (
+                      <option key={b.code} value={b.name}>{b.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div className={styles.formGroup}>
@@ -618,16 +641,10 @@ export default function Profile({ onImageUpdate, theme, onToggleTheme }: Props) 
                     <option value="transmission">Transmission</option>
                   </select>
                 </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Branch code</label>
-                  <input className={styles.input} value={bank.bankBranchCode}
-                    onChange={e => setBank(b => ({ ...b, bankBranchCode: e.target.value }))}
-                    placeholder="e.g. 632005" />
-                </div>
               </div>
               <div className={styles.formFooter}>
                 <button type="submit" className={styles.saveBtn} disabled={bankSaving}>
-                  {bankSaving ? <><span className={styles.inlineSpinner} /> Saving…</> : "Save bank account"}
+                  {bankSaving ? <><span className={styles.inlineSpinner} /> Connecting…</> : hasPayoutAccount ? "Update bank account" : "Connect bank account"}
                 </button>
               </div>
             </form>

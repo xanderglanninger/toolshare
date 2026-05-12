@@ -5,6 +5,15 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import styles from "./stats.module.css";
 
+type Withdrawal = {
+  id: string;
+  amount: number;
+  status: string;
+  paystackRef: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
 type Stats = {
   users: {
     total: number; verified: number; pendingKyc: number;
@@ -83,9 +92,25 @@ function rankClass(i: number) {
 export default function AdminStatsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [stats,       setStats]       = useState<Stats | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [refreshing,  setRefreshing]  = useState(false);
+
+  const [balance,       setBalance]       = useState<number | null>(null);
+  const [withdrawals,   setWithdrawals]   = useState<Withdrawal[]>([]);
+  const [withdrawAmt,   setWithdrawAmt]   = useState("");
+  const [withdrawing,   setWithdrawing]   = useState(false);
+  const [withdrawError, setWithdrawError] = useState("");
+  const [withdrawOk,    setWithdrawOk]    = useState("");
+
+  const loadWithdraw = useCallback(async () => {
+    try {
+      const r = await fetch("/api/admin/withdraw");
+      const d = await r.json();
+      if (d.balance != null) setBalance(d.balance);
+      if (Array.isArray(d.history)) setWithdrawals(d.history);
+    } catch {}
+  }, []);
 
   const load = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
@@ -99,11 +124,35 @@ export default function AdminStatsPage() {
     }
   }, []);
 
+  async function handleWithdraw(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = parseFloat(withdrawAmt);
+    if (!amount || amount <= 0) { setWithdrawError("Enter a valid amount."); return; }
+    setWithdrawing(true); setWithdrawError(""); setWithdrawOk("");
+    try {
+      const res  = await fetch("/api/admin/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Withdrawal failed");
+      setWithdrawOk(`R${amount.toFixed(2)} withdrawal initiated.`);
+      setWithdrawAmt("");
+      loadWithdraw();
+    } catch (err: any) {
+      setWithdrawError(err.message ?? "Something went wrong.");
+    } finally {
+      setWithdrawing(false);
+    }
+  }
+
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/login"); return; }
     if (status !== "authenticated") return;
     load();
-  }, [status, router, load]);
+    loadWithdraw();
+  }, [status, router, load, loadWithdraw]);
 
   if (loading || status === "loading") {
     return <div className={styles.center}>Loading…</div>;
@@ -156,6 +205,75 @@ export default function AdminStatsPage() {
           <span className={`${styles.statValue} ${styles.statValueGold}`}>{fmt(stats.revenue.platformFees)}</span>
           <span className={styles.statSub}>Net platform earnings</span>
         </div>
+      </div>
+
+      {/* ── Platform Withdrawal ── */}
+      <div className={styles.panel}>
+        <div className={styles.panelHead}>
+          <span className={styles.panelTitle}>Withdraw Platform Profits</span>
+          <span className={styles.panelSub}>
+            {balance != null ? `Available Paystack balance: ${fmt(balance)}` : "Loading balance…"}
+          </span>
+        </div>
+        <form onSubmit={handleWithdraw} style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap", padding: "0 0 16px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label style={{ fontSize: 12, color: "var(--text-3)" }}>Amount (ZAR)</label>
+            <input
+              type="number"
+              min="1"
+              step="0.01"
+              value={withdrawAmt}
+              onChange={e => setWithdrawAmt(e.target.value)}
+              placeholder="e.g. 5000"
+              style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text-1)", fontSize: 14, width: 160 }}
+            />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label style={{ fontSize: 12, color: "transparent" }}>_</label>
+            <button
+              type="submit"
+              disabled={withdrawing || !withdrawAmt}
+              style={{ padding: "8px 18px", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontWeight: 600, fontSize: 14, cursor: "pointer", opacity: withdrawing ? 0.7 : 1 }}
+            >
+              {withdrawing ? "Processing…" : "Withdraw"}
+            </button>
+          </div>
+          {withdrawError && <p style={{ color: "#ef4444", fontSize: 13, alignSelf: "flex-end", margin: 0 }}>{withdrawError}</p>}
+          {withdrawOk    && <p style={{ color: "#22c55e", fontSize: 13, alignSelf: "flex-end", margin: 0 }}>{withdrawOk}</p>}
+        </form>
+        {withdrawals.length > 0 && (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Paystack Ref</th>
+                </tr>
+              </thead>
+              <tbody>
+                {withdrawals.map(w => (
+                  <tr key={w.id}>
+                    <td className={styles.tdMuted}>
+                      {new Date(w.createdAt).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "2-digit" })}
+                    </td>
+                    <td className={styles.tdMono}>{fmt(w.amount)}</td>
+                    <td>
+                      <span className={`${styles.badge} ${
+                        w.status === "SUCCESS" ? styles.badgeCompleted :
+                        w.status === "FAILED"  ? styles.badgeCancelled : styles.badgePending
+                      }`}>
+                        {w.status.toLowerCase()}
+                      </span>
+                    </td>
+                    <td className={styles.tdMuted}>{w.paystackRef ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ── Revenue chart ── */}

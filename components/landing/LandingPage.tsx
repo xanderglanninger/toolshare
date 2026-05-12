@@ -326,7 +326,7 @@ export default function LandingPage() {
 
       {/* ── Nav ─────────────────────────────────────────────────── */}
       <nav ref={navRef} className={styles.nav}>
-        <Logo size="md" variant="dark" />
+        <Logo size="md" variant="light" />
         <div className={styles.navRight}>
           <Link href="/login"        className={styles.navLink}>Log in</Link>
           <Link href="/registration" className={styles.navCta}>Get started</Link>
@@ -569,7 +569,7 @@ export default function LandingPage() {
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
-          <Logo size="md" variant="dark" />
+          <Logo size="md" variant="light" />
           <nav className={styles.footerNav} aria-label="Footer navigation">
             <Link href={`/login?redirect=${encodeURIComponent("/dashboard")}`} className={styles.footerLink}>Browse</Link>
             <Link href="/registration"                                         className={styles.footerLink}>List gear</Link>

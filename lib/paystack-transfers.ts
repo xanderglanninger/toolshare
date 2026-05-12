@@ -20,13 +20,13 @@ interface TransferResult {
 export async function createTransferRecipient(params: {
   name: string;
   accountNumber: string;
-  bankCode: string;       // Paystack bank code (3-digit, e.g. "007" for First National Bank)
+  bankCode: string;       // Paystack SA bank code (6-digit, e.g. "470010" for Capitec)
 }): Promise<{ recipientCode: string }> {
   const res = await fetch(`${PAYSTACK_BASE_URL}/transferrecipient`, {
     method: "POST",
     headers: paystackHeaders(),
     body: JSON.stringify({
-      type: "nuban",
+      type: "basa",
       name: params.name,
       account_number: params.accountNumber,
       bank_code: params.bankCode,

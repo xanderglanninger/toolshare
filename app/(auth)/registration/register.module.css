@@ -44,41 +44,6 @@
   background: repeating-linear-gradient(-45deg, #f5a800 0px, #f5a800 12px, #1c1a17 12px, #1c1a17 24px);
 }
 
-/* ─── Logo ────────────────────────────────────────── */
-
-.logo {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.logoBox {
-  background: #f5a800;
-  color: #1c1a17;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  padding: 4px 9px;
-  letter-spacing: 0.02em;
-  text-transform: lowercase;
-  line-height: 1;
-  border-radius: 3px 0 0 3px;
-}
-
-.logoSuffix {
-  font-family: 'Inter', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: #1c1a17;
-  letter-spacing: 0.02em;
-  text-transform: lowercase;
-  padding: 4px 8px;
-  border: 2px solid #1c1a17;
-  border-left: none;
-  line-height: 1;
-  border-radius: 0 3px 3px 0;
-}
-
 /* ─── Form ────────────────────────────────────────── */
 
 .formArea {
