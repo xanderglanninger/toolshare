@@ -251,12 +251,21 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         {/* ── Mobile top nav ── */}
         <nav className={styles.mobileBottomNav}>
-          {/* Logo */}
-          <div className={styles.mobileNavLeft}>
+          {/* Row 1: logo + avatar */}
+          <div className={styles.mobileNavTop}>
             <Logo size="sm" variant={theme === "dark" ? "dark" : "light"} />
+            <div className={styles.mobileNavRight}>
+              <button
+                className={styles.mobileNavAvatarBtn}
+                onClick={() => navigate("/dashboard/settings")}
+                aria-label="Profile"
+              >
+                {userImage ? <img src={userImage} alt="" /> : initials}
+              </button>
+            </div>
           </div>
 
-          {/* Center icons */}
+          {/* Row 2: nav icons */}
           <div className={styles.mobileNavCenter}>
             {MOBILE_NAV.map((item) => (
               <button
@@ -278,19 +287,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 <span className={styles.mobileNavLabel}>{item.label}</span>
               </button>
             ))}
-          </div>
-
-          {/* Right: avatar */}
-          <div className={styles.mobileNavRight}>
-            <button
-              className={styles.mobileNavAvatarBtn}
-              onClick={() => navigate("/dashboard/settings")}
-              aria-label="Profile"
-            >
-              {userImage
-                ? <img src={userImage} alt="" />
-                : initials}
-            </button>
           </div>
         </nav>
       </main>

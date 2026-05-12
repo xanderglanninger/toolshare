@@ -371,34 +371,32 @@
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 56px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-1);
   z-index: 100;
-  flex-direction: row;
-  align-items: stretch;
+  flex-direction: column;
   padding-top: env(safe-area-inset-top);
 }
 
-.mobileNavLeft {
+/* Row 1: logo + avatar */
+.mobileNavTop {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  flex-shrink: 0;
-}
-
-.mobileNavCenter {
-  flex: 1;
-  display: flex;
-  align-items: stretch;
+  justify-content: space-between;
+  padding: 10px 16px 6px;
 }
 
 .mobileNavRight {
   display: flex;
   align-items: center;
-  padding: 0 10px;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 8px;
+}
+
+/* Row 2: nav icons */
+.mobileNavCenter {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--border-1);
 }
 
 .mobileNavItem {
@@ -407,13 +405,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
   color: var(--text-3);
   cursor: pointer;
-  padding: 0 4px;
+  padding: 8px 4px 6px;
   transition: color 0.15s, border-color 0.15s;
 }
 
@@ -435,8 +433,8 @@
 }
 
 .mobileNavAvatarBtn {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 2px solid var(--border-1);
   background: var(--accent);
@@ -464,7 +462,7 @@
 
 @media (max-width: 768px) {
   .sidebar         { display: none; }
-  .main            { margin-left: 0; padding-top: 56px; }
+  .main            { margin-left: 0; padding-top: 100px; }
   .menuBtn         { display: none; }
   .mobileLogo      { display: none; }
   .topbar          { display: none; }
