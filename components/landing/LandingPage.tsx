@@ -319,14 +319,14 @@ export default function LandingPage() {
   /* ── Render ─────────────────────────────────────────────────────────────── */
 
   return (
-    <>
+    <div data-theme="dark" className={styles.root}>
       {/* Custom cursor */}
       <div ref={cursorRef}    className={styles.cursor}    aria-hidden="true" />
       <div ref={cursorDotRef} className={styles.cursorDot} aria-hidden="true" />
 
       {/* ── Nav ─────────────────────────────────────────────────── */}
       <nav ref={navRef} className={styles.nav}>
-        <Logo size="md" variant="light" />
+        <Logo size="md" variant="dark" />
         <div className={styles.navRight}>
           <Link href="/login"        className={styles.navLink}>Log in</Link>
           <Link href="/registration" className={styles.navCta}>Get started</Link>
@@ -569,12 +569,17 @@ export default function LandingPage() {
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className={styles.footer}>
         <div className={styles.footerTop}>
-          <Logo size="md" variant="light" />
+          <Logo size="md" variant="dark" />
           <nav className={styles.footerNav} aria-label="Footer navigation">
             <Link href={`/login?redirect=${encodeURIComponent("/dashboard")}`} className={styles.footerLink}>Browse</Link>
             <Link href="/registration"                                         className={styles.footerLink}>List gear</Link>
             <Link href="/login"                                                className={styles.footerLink}>Log in</Link>
             <Link href="/registration"                                         className={styles.footerLink}>Sign up</Link>
+            <Link href="/contact"                                              className={styles.footerLink}>Contact</Link>
+            <Link href="/faq"                                                  className={styles.footerLink}>FAQ</Link>
+            <Link href="/terms"                                                className={styles.footerLink}>Terms</Link>
+            <Link href="/privacy"                                              className={styles.footerLink}>Privacy</Link>
+            <Link href="/refund-policy"                                        className={styles.footerLink}>Refund policy</Link>
           </nav>
         </div>
         <div className={styles.footerBottom}>
@@ -584,6 +589,6 @@ export default function LandingPage() {
           </span>
         </div>
       </footer>
-    </>
+    </div>
   );
 }

@@ -74,7 +74,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     { id: "bookings",      path: "/dashboard/bookings",         label: "Bookings" },
     { id: "messages",      path: "/dashboard/messages",         label: "Messages" },
     { id: "notifications", path: "/dashboard/notifications",    label: "Alerts" },
-    { id: "profile",       path: "/dashboard/settings",         label: "Profile" },
   ];
 
   // SVG icons for mobile bottom nav
@@ -250,28 +249,49 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           ＋
         </button>
 
-        {/* ── Mobile bottom nav ── */}
+        {/* ── Mobile top nav ── */}
         <nav className={styles.mobileBottomNav}>
-          {MOBILE_NAV.map((item) => (
-            <button
-              key={item.id}
-              className={`${styles.mobileNavItem}${isActive(item.path) ? " " + styles.mobileNavActive : ""}`}
-              onClick={() => navigate(item.path)}
-              aria-label={item.label}
-            >
-              <span className={styles.mobileNavIcon}>
-                {item.id === "notifications" && notifUnread > 0
-                  ? <span style={{ position: "relative", display: "inline-flex" }}>
-                      {mobileNavIcons[item.id]}
-                      <span style={{ position: "absolute", top: -4, right: -6, background: "#f5a800", color: "#1c1a17", borderRadius: "50%", fontSize: 9, fontWeight: 700, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
-                        {notifUnread > 99 ? "99+" : notifUnread}
+          {/* Logo */}
+          <div className={styles.mobileNavLeft}>
+            <Logo size="sm" variant={theme === "dark" ? "dark" : "light"} />
+          </div>
+
+          {/* Center icons */}
+          <div className={styles.mobileNavCenter}>
+            {MOBILE_NAV.map((item) => (
+              <button
+                key={item.id}
+                className={`${styles.mobileNavItem}${isActive(item.path) ? " " + styles.mobileNavActive : ""}`}
+                onClick={() => navigate(item.path)}
+                aria-label={item.label}
+              >
+                <span className={styles.mobileNavIcon}>
+                  {item.id === "notifications" && notifUnread > 0
+                    ? <span style={{ position: "relative", display: "inline-flex" }}>
+                        {mobileNavIcons[item.id]}
+                        <span style={{ position: "absolute", top: -4, right: -6, background: "#f5a800", color: "#1c1a17", borderRadius: "50%", fontSize: 9, fontWeight: 700, minWidth: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
+                          {notifUnread > 99 ? "99+" : notifUnread}
+                        </span>
                       </span>
-                    </span>
-                  : mobileNavIcons[item.id]}
-              </span>
-              <span className={styles.mobileNavLabel}>{item.label}</span>
+                    : mobileNavIcons[item.id]}
+                </span>
+                <span className={styles.mobileNavLabel}>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Right: avatar */}
+          <div className={styles.mobileNavRight}>
+            <button
+              className={styles.mobileNavAvatarBtn}
+              onClick={() => navigate("/dashboard/settings")}
+              aria-label="Profile"
+            >
+              {userImage
+                ? <img src={userImage} alt="" />
+                : initials}
             </button>
-          ))}
+          </div>
         </nav>
       </main>
 

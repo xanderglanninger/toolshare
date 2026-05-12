@@ -1064,6 +1064,14 @@
   .cursor, .cursorDot { display: none; }
 }
 
+/* ─── Landing root — always dark ────────────────────────────────────────── */
+
+.root {
+  background: #2a2720;
+  color: #f5f0e8;
+  min-height: 100vh;
+}
+
 @media (max-width: 480px) {
   .showcaseGrid { grid-template-columns: 1fr; }
   .ctaActions   { flex-direction: column; align-items: center; }

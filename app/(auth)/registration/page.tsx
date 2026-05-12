@@ -144,7 +144,7 @@ function RegisterContent() {
   };
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} data-theme="dark">
       <div className={styles.card}>
 
         {/* ── Left: form ── */}
