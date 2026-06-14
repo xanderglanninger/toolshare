@@ -565,9 +565,9 @@
 .emptyTitle { font-size: 20px; font-weight: 700; color: var(--text-2); }
 .emptySub   { font-size: 14px; color: var(--text-4); }
 
-/* ─── Mobile bar (search + chips) — hidden on desktop ───────────────────── */
+/* ─── Mobile bar — always hidden (search moved to /dashboard/search) ─────── */
 .mobileBar {
-  display: none;
+  display: none !important;
 }
 
 .hideOnMobile {

@@ -1,0 +1,261 @@
+/* ─── Page ───────────────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--bg-base);
+  overflow-x: hidden;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.backBtn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border-1);
+  border-radius: 50%;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.backBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+.searchBar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: var(--bg-card-2);
+  border: 1.5px solid var(--border-1);
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 42px;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+.searchBar:focus-within { border-color: var(--accent); }
+
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 16px; /* 16px prevents iOS zoom */
+  font-family: 'Inter', sans-serif;
+  color: var(--text-1);
+}
+.searchInput::placeholder { color: var(--text-5); }
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  line-height: 0;
+}
+
+/* ─── Category chips ─────────────────────────────────────────────────────── */
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-card);
+}
+.chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-1);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.chip:hover { border-color: var(--border-3); color: var(--text-1); }
+
+.chipActive {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #1c1a17 !important;
+  font-weight: 600;
+}
+
+.chipIcon { display: flex; align-items: center; line-height: 0; }
+
+/* ─── Results area ───────────────────────────────────────────────────────── */
+.results {
+  flex: 1;
+  padding: 14px;
+}
+
+/* ─── Prompt (no query yet) ──────────────────────────────────────────────── */
+.prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+  gap: 6px;
+}
+.promptTitle { font-size: 16px; font-weight: 600; color: var(--text-3); margin: 0; }
+.promptSub   { font-size: 13px; color: var(--text-5); margin: 0; }
+
+/* ─── Empty ──────────────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  gap: 6px;
+}
+.emptyTitle { font-size: 15px; font-weight: 600; color: var(--text-3); margin: 0; }
+.emptySub   { font-size: 13px; color: var(--text-5); margin: 0; }
+
+/* ─── Grid ───────────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ─── Card ───────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.card:active { border-color: var(--accent); }
+
+.cardImg {
+  aspect-ratio: 4 / 3;
+  background: var(--bg-card-2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardImgEl {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardImgPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-5);
+}
+
+.cardBody {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cardPrice {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.cardPriceSub { font-size: 10px; font-weight: 400; color: var(--text-4); }
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.cardCity {
+  font-size: 11px;
+  color: var(--text-5);
+  margin: 0;
+}
+
+/* ─── Skeleton ───────────────────────────────────────────────────────────── */
+.skeleton {
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  aspect-ratio: 3 / 4;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 0.25; }
+}
+
+/* ─── Spinner ────────────────────────────────────────────────────────────── */
+.spinnerWrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--border-2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Desktop: redirect hint ─────────────────────────────────────────────── */
+@media (min-width: 769px) {
+  .page { max-width: 800px; margin: 0 auto; padding: 40px 36px; }
+  .header { position: static; border-radius: 12px; margin-bottom: 16px; }
+  .chips { border-radius: 12px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
