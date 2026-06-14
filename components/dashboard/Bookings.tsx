@@ -51,6 +51,10 @@ function fmt(n: number) {
   return `R ${n.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function fmtDateShort(d: Date | string) {
+  return new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
+}
+
 function formatDateRange(start: Date | string, end: Date | string) {
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" };
   return `${new Date(start).toLocaleDateString("en-ZA", opts)} – ${new Date(end).toLocaleDateString("en-ZA", opts)}`;
@@ -79,32 +83,6 @@ function Avatar({ name, surname }: { name: string; surname: string }) {
     <div className={styles.avatar}>
       {(name?.[0] ?? "").toUpperCase()}{(surname?.[0] ?? "").toUpperCase()}
     </div>
-  );
-}
-
-const ESCROW_LABELS: Record<string, string> = {
-  HELD: "Funds held in escrow",
-  DISPUTED: "Funds frozen — dispute open",
-  RELEASED: "Funds released to owner",
-  REFUNDED: "Funds refunded",
-  PARTIAL: "Partial refund issued",
-};
-
-function EscrowBadge({ escrowStatus }: { escrowStatus?: string }) {
-  if (!escrowStatus || escrowStatus === "RELEASED" || escrowStatus === "REFUNDED") return null;
-  const label = ESCROW_LABELS[escrowStatus] ?? escrowStatus;
-  const colors: Record<string, string> = {
-    HELD: "#c8a84b", DISPUTED: "#e55", PARTIAL: "#ff9800",
-  };
-  return (
-    <span style={{
-      display: "inline-block", fontSize: "0.7rem", fontWeight: 600,
-      padding: "2px 8px", borderRadius: 20,
-      background: colors[escrowStatus] ?? "#888", color: "#fff",
-      marginLeft: 6, verticalAlign: "middle",
-    }}>
-      {label}
-    </span>
   );
 }
 
@@ -139,7 +117,6 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
   );
 
   const tabCount = (id: TabId) => bookings.filter((b) => matchesTab(id, b.status)).length;
-
   const pendingCount = bookings.filter((b) => b.status === "PENDING").length;
   const activeCount  = bookings.filter((b) => b.status === "ACTIVE").length;
 
@@ -182,14 +159,13 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
   return (
     <div className={styles.page}>
 
-      {/* ── Hero header ───────────────────────────────────────── */}
-      <div className={styles.hero}>
-        <div className={styles.heroLeft}>
-          <div className={styles.heroText}>
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <div className={styles.header}>
+        <div className={styles.headerTop}>
+          <div>
             <p className={styles.eyebrow}>Manage</p>
             <h1 className={styles.pageTitle}>Bookings</h1>
           </div>
-
           {!loading && bookings.length > 0 && (
             <div className={styles.stats}>
               <div className={styles.stat}>
@@ -236,7 +212,7 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
         </div>
       </div>
 
-      {/* ── Status filter ─────────────────────────────────────── */}
+      {/* ── Status filter ─────────────────────────────────────────── */}
       <div className={styles.tabs}>
         {STATUS_TABS.map((t) => {
           const count = tabCount(t.id);
@@ -257,7 +233,7 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
         })}
       </div>
 
-      {/* ── List ──────────────────────────────────────────────── */}
+      {/* ── List ──────────────────────────────────────────────────── */}
       <div className={styles.list}>
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -288,9 +264,7 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
             const isPaid       = b.payment?.status === "SUCCEEDED";
             const needsPay     = b.status === "PENDING" && !isLent && !isPaid;
             const canCancel    = (b.status === "PENDING" || b.status === "CONFIRMED") && !b.listerHandoverSigned;
-            // Wizard covers all handover + return steps for CONFIRMED and ACTIVE bookings
             const canOpenWizard = (b.status === "CONFIRMED" && isPaid) || b.status === "ACTIVE";
-            // Early-return flow (cancel-return) stays separate
             const canRequestCancelReturn = b.status === "ACTIVE" && !isLent && !b.cancelReturnRequested;
             const hasPendingCancelReturn = b.status === "ACTIVE" && isLent && b.cancelReturnRequested;
             const alreadyReviewed = session?.user?.id
@@ -301,7 +275,6 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
             const thumb        = b.listing.images?.[0];
             const isConfirming = confirmId === b.id;
 
-            // Rec #6: Compute whether this booking needs the current user's immediate action
             const needsAction: string | null = (() => {
               if (isLent) {
                 if (b.status === "CONFIRMED" && isPaid && !b.listerInitiatedHandover) return "Start handover";
@@ -318,12 +291,50 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
               return null;
             })();
 
+            const primaryAction = (() => {
+              if (needsPay) return (
+                <button className={styles.btnPrimary} onClick={() => router.push(`/payment/${b.id}`)}>Pay now</button>
+              );
+              if (canOpenWizard) return (
+                <button className={styles.btnPrimary} onClick={() => router.push(`/dashboard/bookings/${b.id}/wizard`)}>
+                  {b.status === "ACTIVE"
+                    ? (isLent ? "Confirm Return" : "Return Item")
+                    : (isLent ? "Start Handover" : "View Handover")}
+                </button>
+              );
+              if (hasPendingCancelReturn) return (
+                <button className={styles.btnPrimary} onClick={() => router.push(`/dashboard/bookings/${b.id}/cancel-return`)}>Confirm Return</button>
+              );
+              if (canRequestCancelReturn) return (
+                <button className={styles.btnDanger} onClick={() => router.push(`/dashboard/bookings/${b.id}/cancel-return`)}>Cancel</button>
+              );
+              if (canReview) return (
+                <button className={styles.btnReview} onClick={() => setReviewBooking(b)}>Leave Review</button>
+              );
+              if (isPaid) return (
+                <button className={styles.btnSecondary} onClick={() => router.push(`/invoice/${b.id}`)}>Invoice</button>
+              );
+              if (canCancel) return (
+                <button className={styles.btnDanger} onClick={() => setConfirmId(b.id)}>Cancel</button>
+              );
+              return null;
+            })();
+
             return (
               <div
                 key={b.id}
-                className={`${styles.card}${isConfirming ? " " + styles.cardConfirm : ""}`}
+                className={`${styles.card}${isConfirming ? " " + styles.cardConfirm : ""}${needsAction ? " " + styles.cardUrgent : ""}`}
               >
-                <div className={styles.cardInner}>
+                {/* Urgent action banner */}
+                {needsAction && !isConfirming && (
+                  <div className={styles.actionBanner}>
+                    <span className={styles.actionBannerDot} />
+                    {needsAction}
+                  </div>
+                )}
+
+                {/* Card body */}
+                <div className={styles.cardBody}>
                   {/* Thumbnail */}
                   <div className={styles.thumb}>
                     {thumb
@@ -331,156 +342,80 @@ export default function Bookings({ onOpenThread }: { onOpenThread?: (threadId: s
                       : <span className={styles.thumbIcon}>{icon}</span>}
                   </div>
 
-                  {/* Main info */}
+                  {/* Info */}
                   <div className={styles.info}>
                     <div className={styles.infoTop}>
+                      <StatusBadge status={b.status} />
                       <span className={`${styles.typeTag} ${isLent ? styles.typeOut : styles.typeIn}`}>
                         {isLent ? "Lent out" : "Borrowed"}
                       </span>
-                      <StatusBadge status={b.status} />
-                      <EscrowBadge escrowStatus={escrowStatus} />
-                      {needsAction && (
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 4,
-                          fontSize: "0.68rem", fontWeight: 700, padding: "2px 8px",
-                          borderRadius: 20, background: "#f59e0b", color: "#fff",
-                          animation: "pulse 2s infinite",
-                        }}>
-                          ⚡ {needsAction}
-                        </span>
-                      )}
                     </div>
 
                     <p className={styles.cardTitle}>{b.listing.title}</p>
 
                     <Link href={`/dashboard/lister/${party.id}`} className={styles.metaRow} style={{ textDecoration: "none" }}>
                       <Avatar name={party.name} surname={party.surname} />
-                      <span className={`${styles.partyName} ${styles.partyNameLink}`}>{party.name} {party.surname}</span>
+                      <span className={styles.partyName}>{party.name} {party.surname}</span>
                     </Link>
 
                     <div className={styles.metaRow}>
-                      <span className={styles.metaIcon}><Calendar size={13} /></span>
-                      <span className={styles.metaText}>{formatDateRange(b.startDate, b.endDate)}</span>
-                      <span className={styles.metaDot}>·</span>
-                      <span className={styles.metaText}>{days} day{days !== 1 ? "s" : ""}</span>
+                      <Calendar size={12} className={styles.metaIcon} />
+                      <span className={styles.metaText}>
+                        {fmtDateShort(b.startDate)} – {fmtDateShort(b.endDate)}
+                        <span className={styles.metaDot}> · </span>
+                        {days}d
+                      </span>
                     </div>
-
-                    {isPaid && b.payment?.paymentReference && (
-                      <div className={styles.metaRow}>
-                        <span className={styles.metaIcon}><Check size={13} /></span>
-                        <span className={styles.paidRef}>{b.payment.paymentReference}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right column */}
-                  <div className={styles.cardRight}>
-                    <p className={styles.cardAmount}>{fmt(b.totalAmount)}</p>
-
-                    {!isConfirming ? (
-                      <div className={styles.actions}>
-                        {needsPay && (
-                          <button
-                            className={styles.btnPay}
-                            onClick={() => router.push(`/payment/${b.id}`)}
-                          >
-                            Pay now
-                          </button>
-                        )}
-                        {isPaid && (
-                          <button
-                            className={styles.btnInvoice}
-                            onClick={() => router.push(`/invoice/${b.id}`)}
-                          >
-                            Invoice
-                          </button>
-                        )}
-                        {onOpenThread && (
-                          <button
-                            className={styles.btnMsg}
-                            disabled={openingMsg === b.id}
-                            onClick={() => openMessage(b)}
-                          >
-                            {openingMsg === b.id ? "…" : "Message"}
-                          </button>
-                        )}
-                        {canReview && (
-                          <button
-                            className={styles.btnReview}
-                            onClick={() => setReviewBooking(b)}
-                          >
-                            Review
-                          </button>
-                        )}
-                        {canOpenWizard && (
-                          <button
-                            className={styles.btnPay}
-                            onClick={() => router.push(`/dashboard/bookings/${b.id}/wizard`)}
-                          >
-                            {b.status === "ACTIVE"
-                              ? (isLent ? "Confirm Return" : "Return Item")
-                              : (isLent ? "Start Handover" : "View Handover")}
-                          </button>
-                        )}
-                        {canRequestCancelReturn && (
-                          <button
-                            className={styles.btnCancel}
-                            onClick={() => router.push(`/dashboard/bookings/${b.id}/cancel-return`)}
-                          >
-                            Cancel Booking
-                          </button>
-                        )}
-                        {hasPendingCancelReturn && (
-                          <button
-                            className={styles.btnPay}
-                            onClick={() => router.push(`/dashboard/bookings/${b.id}/cancel-return`)}
-                          >
-                            Confirm Return
-                          </button>
-                        )}
-                        {canCancel && (
-                          <button
-                            className={styles.btnCancel}
-                            onClick={() => setConfirmId(b.id)}
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className={styles.confirmBox}>
-                        <p className={styles.confirmText}>Cancel this booking?</p>
-                        {cancelRefundInfo ? (
-                          <p style={{ fontSize: "0.78rem", color: "#666", margin: "0 0 6px" }}>
-                            {cancelRefundInfo.tier === "FULL_REFUND" && `Full refund of ${fmt(cancelRefundInfo.refundAmount)} will be issued.`}
-                            {cancelRefundInfo.tier === "HALF_REFUND" && `50% refund of ${fmt(cancelRefundInfo.refundAmount)} will be issued.`}
-                            {cancelRefundInfo.tier === "NO_REFUND" && "No refund applies (less than 3 days before start)."}
-                            {cancelRefundInfo.tier === "OWNER_CANCEL" && `Full refund of ${fmt(cancelRefundInfo.refundAmount)} will be issued.`}
-                          </p>
-                        ) : (
-                          <p style={{ fontSize: "0.78rem", color: "#888", margin: "0 0 6px" }}>
-                            Refund depends on how far in advance you cancel.
-                          </p>
-                        )}
-                        <div className={styles.confirmBtns}>
-                          <button
-                            className={styles.btnConfirmYes}
-                            disabled={cancellingId === b.id}
-                            onClick={() => cancelBooking(b.id)}
-                          >
-                            {cancellingId === b.id ? "…" : "Yes, cancel"}
-                          </button>
-                          <button
-                            className={styles.btnConfirmNo}
-                            onClick={() => { setConfirmId(null); setCancelRefundInfo(null); }}
-                          >
-                            Keep it
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
+
+                {/* Card footer: amount + actions */}
+                {!isConfirming ? (
+                  <div className={styles.cardFoot}>
+                    <p className={styles.cardAmount}>{fmt(b.totalAmount)}</p>
+                    <div className={styles.footActions}>
+                      {onOpenThread && (
+                        <button
+                          className={styles.btnSecondary}
+                          disabled={openingMsg === b.id}
+                          onClick={() => openMessage(b)}
+                        >
+                          {openingMsg === b.id ? "…" : "Message"}
+                        </button>
+                      )}
+                      {primaryAction}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.confirmBox}>
+                    <p className={styles.confirmText}>Cancel this booking?</p>
+                    {cancelRefundInfo ? (
+                      <p className={styles.confirmSub}>
+                        {cancelRefundInfo.tier === "FULL_REFUND" && `Full refund of ${fmt(cancelRefundInfo.refundAmount)}.`}
+                        {cancelRefundInfo.tier === "HALF_REFUND" && `50% refund of ${fmt(cancelRefundInfo.refundAmount)}.`}
+                        {cancelRefundInfo.tier === "NO_REFUND" && "No refund (less than 3 days notice)."}
+                        {cancelRefundInfo.tier === "OWNER_CANCEL" && `Full refund of ${fmt(cancelRefundInfo.refundAmount)}.`}
+                      </p>
+                    ) : (
+                      <p className={styles.confirmSub}>Refund depends on how far in advance you cancel.</p>
+                    )}
+                    <div className={styles.confirmBtns}>
+                      <button
+                        className={styles.btnConfirmYes}
+                        disabled={cancellingId === b.id}
+                        onClick={() => cancelBooking(b.id)}
+                      >
+                        {cancellingId === b.id ? "…" : "Yes, cancel"}
+                      </button>
+                      <button
+                        className={styles.btnConfirmNo}
+                        onClick={() => { setConfirmId(null); setCancelRefundInfo(null); }}
+                      >
+                        Keep it
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })

@@ -1,27 +1,30 @@
+/* ─── Page ───────────────────────────────────────────────────────────────── */
+
 .page {
   padding: 40px 36px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
-/* ─── Hero ──────────────────────────────────────────────────────────────── */
+/* ─── Header ─────────────────────────────────────────────────────────────── */
 
-.hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
+.header {
   background: var(--bg-card);
   border: 1px solid var(--border-1);
   border-radius: 16px;
   padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   position: relative;
   overflow: hidden;
 }
 
-.hero::before {
+.header::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -29,7 +32,7 @@
   pointer-events: none;
 }
 
-.hero::after {
+.header::after {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -37,18 +40,14 @@
   background: linear-gradient(90deg, var(--accent) 0%, transparent 60%);
 }
 
-.heroLeft {
+.headerTop {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   position: relative;
   z-index: 1;
-}
-
-.heroText {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .eyebrow {
@@ -57,6 +56,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent);
+  margin: 0 0 4px;
 }
 
 .pageTitle {
@@ -65,6 +65,7 @@
   color: var(--text-1);
   letter-spacing: -0.03em;
   line-height: 1;
+  margin: 0;
 }
 
 /* ─── Stats strip ────────────────────────────────────────────────────────── */
@@ -118,6 +119,7 @@
 }
 
 .roleBtn {
+  flex: 1;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-4);
@@ -129,6 +131,7 @@
   transition: background 0.15s, color 0.15s;
   font-family: 'Inter', sans-serif;
   white-space: nowrap;
+  text-align: center;
 }
 
 .roleBtn:hover { color: var(--text-2); }
@@ -143,33 +146,38 @@
 
 .tabs {
   display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--border-1);
-  flex-wrap: wrap;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
 }
+
+.tabs::-webkit-scrollbar { display: none; }
 
 .tab {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  flex-shrink: 0;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-4);
-  padding: 10px 16px;
-  border: none;
-  border-bottom: 2px solid transparent;
+  padding: 7px 14px;
+  border: 1px solid var(--border-1);
+  border-radius: 20px;
   background: transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
   font-family: 'Inter', sans-serif;
-  margin-bottom: -1px;
 }
 
-.tab:hover { color: var(--text-2); }
+.tab:hover { color: var(--text-2); border-color: var(--border-3); }
 
 .tabActive {
-  color: var(--accent) !important;
-  border-bottom-color: var(--accent) !important;
+  background: var(--accent) !important;
+  color: #1c1a17 !important;
+  border-color: var(--accent) !important;
 }
 
 .tabCount {
@@ -184,8 +192,8 @@
 }
 
 .tabCountActive {
-  background: rgba(245,168,0,0.18) !important;
-  color: var(--accent) !important;
+  background: rgba(0,0,0,0.2) !important;
+  color: #1c1a17 !important;
 }
 
 /* ─── List ───────────────────────────────────────────────────────────────── */
@@ -221,13 +229,13 @@
   gap: 10px;
 }
 
-.emptyIcon { font-size: 40px; line-height: 1; color: inherit; }
+.emptyIcon { color: var(--text-5); }
 
 .emptyTitle {
   font-size: 15px;
   font-weight: 600;
   color: var(--text-3);
-  margin-top: 4px;
+  margin: 4px 0 0;
 }
 
 .emptyHint {
@@ -238,13 +246,11 @@
 /* ─── Card ───────────────────────────────────────────────────────────────── */
 
 .card {
-  display: flex;
-  align-items: stretch;
   background: var(--bg-card);
   border: 1px solid var(--border-1);
   border-radius: 14px;
   overflow: hidden;
-  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
 .card:hover {
@@ -257,21 +263,54 @@
   background: rgba(239,68,68,0.03) !important;
 }
 
-.cardInner {
+.cardUrgent {
+  border-color: rgba(245,168,0,0.4) !important;
+}
+
+/* ─── Action banner ──────────────────────────────────────────────────────── */
+
+.actionBanner {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 18px 20px;
-  flex: 1;
-  min-width: 0;
+  gap: 8px;
+  padding: 7px 16px;
+  background: rgba(245,168,0,0.12);
+  border-bottom: 1px solid rgba(245,168,0,0.2);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.actionBannerDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ─── Card body: thumb + info ────────────────────────────────────────────── */
+
+.cardBody {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
 }
 
 /* ─── Thumbnail ──────────────────────────────────────────────────────────── */
 
 .thumb {
   flex-shrink: 0;
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
   border-radius: 10px;
   overflow: hidden;
   background: var(--bg-card-2);
@@ -288,9 +327,7 @@
 }
 
 .thumbIcon {
-  font-size: 30px;
-  line-height: 1;
-  color: inherit;
+  color: var(--text-5);
 }
 
 /* ─── Info ───────────────────────────────────────────────────────────────── */
@@ -300,13 +337,14 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .infoTop {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .typeTag {
@@ -329,68 +367,57 @@
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.01em;
+  margin: 0;
 }
 
 .metaRow {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .avatar {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--bg-card-2);
   border: 1px solid var(--border-2);
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 700;
   color: var(--text-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  letter-spacing: 0;
 }
 
 .partyName {
   font-size: 12px;
   color: var(--text-3);
   font-weight: 500;
-}
-
-.partyNameLink {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: color 0.15s;
 }
-.metaRow:hover .partyNameLink { color: var(--accent); }
+
+.metaRow:hover .partyName { color: var(--accent); }
 
 .metaIcon {
-  font-size: 11px;
   flex-shrink: 0;
-  line-height: 1;
-  color: inherit;
+  color: var(--text-5);
 }
 
 .metaText {
   font-size: 11px;
   color: var(--text-5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.metaDot {
-  font-size: 11px;
-  color: var(--border-2);
-}
-
-.paidRef {
-  font-size: 10px;
-  font-weight: 600;
-  color: #22c55e;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  letter-spacing: 0.04em;
-  background: rgba(34,197,94,0.08);
-  padding: 1px 6px;
-  border-radius: 4px;
-}
+.metaDot { color: var(--border-2); }
 
 /* ─── Status badges ──────────────────────────────────────────────────────── */
 
@@ -410,290 +437,189 @@
 .badgeDone      { background: rgba(34,197,94,0.12);           color: #22c55e; }
 .badgeCancelled { background: rgba(239,68,68,0.12);           color: #f87171; }
 
-/* ─── Right column ───────────────────────────────────────────────────────── */
+/* ─── Card footer: amount + actions ─────────────────────────────────────── */
 
-.cardRight {
+.cardFoot {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 10px;
-  flex-shrink: 0;
-  padding: 18px 20px 18px 0;
-  min-width: 160px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-1);
+  gap: 12px;
 }
 
 .cardAmount {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-1);
   white-space: nowrap;
   letter-spacing: -0.02em;
+  flex-shrink: 0;
 }
 
-.actions {
+.footActions {
   display: flex;
   gap: 6px;
+  align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 
-.btnBase {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 13px;
-  border-radius: 7px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.btnPay {
-  composes: btnBase;
+.btnPrimary {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 20px;
   border: none;
   background: var(--accent);
   color: #1c1a17;
-  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  transition: background 0.15s;
 }
-.btnPay:hover { background: #e69b00; }
+.btnPrimary:hover { background: #e69b00; }
 
-.btnInvoice {
-  composes: btnBase;
+.btnSecondary {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 20px;
   border: 1px solid var(--border-2);
   background: transparent;
   color: var(--text-3);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
 }
-.btnInvoice:hover { border-color: var(--accent); color: var(--accent); }
-
-.btnMsg {
-  composes: btnBase;
-  border: 1px solid var(--border-2);
-  background: transparent;
-  color: var(--accent);
-}
-.btnMsg:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-.btnMsg:disabled { opacity: 0.5; cursor: not-allowed; }
+.btnSecondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btnSecondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnReview {
-  composes: btnBase;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 20px;
   border: 1px solid rgba(245,168,0,0.35);
   background: var(--accent-soft);
   color: var(--accent);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
 }
 .btnReview:hover { border-color: var(--accent); background: rgba(245,168,0,0.18); }
 
-.btnCancel {
-  composes: btnBase;
+.btnDanger {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 20px;
   border: 1px solid var(--border-1);
   background: transparent;
   color: var(--text-4);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
 }
-.btnCancel:hover { border-color: #f87171; color: #f87171; }
+.btnDanger:hover { border-color: #f87171; color: #f87171; }
 
-/* ─── Inline cancel confirm ──────────────────────────────────────────────── */
+/* ─── Cancel confirm ─────────────────────────────────────────────────────── */
 
 .confirmBox {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-1);
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   gap: 8px;
 }
 
 .confirmText {
-  font-size: 11px;
+  font-size: 13px;
   color: #f87171;
   font-weight: 600;
-  white-space: nowrap;
+  margin: 0;
+}
+
+.confirmSub {
+  font-size: 12px;
+  color: var(--text-4);
+  margin: 0;
 }
 
 .confirmBtns {
   display: flex;
-  gap: 5px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .btnConfirmYes {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 7px;
+  padding: 7px 16px;
+  border-radius: 20px;
   border: 1px solid rgba(239,68,68,0.4);
   background: rgba(239,68,68,0.12);
   color: #f87171;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
-  transition: background 0.15s;
   white-space: nowrap;
+  transition: background 0.15s;
 }
 .btnConfirmYes:hover:not(:disabled) { background: rgba(239,68,68,0.22); }
 .btnConfirmYes:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnConfirmNo {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 7px;
+  padding: 7px 14px;
+  border-radius: 20px;
   border: 1px solid var(--border-1);
   background: transparent;
   color: var(--text-4);
   cursor: pointer;
   font-family: 'Inter', sans-serif;
-  transition: border-color 0.15s, color 0.15s;
   white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
 }
 .btnConfirmNo:hover { color: var(--text-2); border-color: var(--border-3); }
 
-/* ─── Responsive ─────────────────────────────────────────────────────────── */
+/* ─── Mobile ─────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-  /* Page */
-  .page { padding: 16px 12px; gap: 14px; }
+  .page { padding: 16px 12px; gap: 12px; }
 
-  /* Hero: compact, vertical stack */
-  .hero {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px 16px 14px;
-    gap: 14px;
-  }
+  /* Header */
+  .header { padding: 16px; gap: 12px; }
 
-  .heroLeft { gap: 14px; }
-
-  .heroText { flex-direction: row; align-items: center; gap: 10px; }
+  .headerTop { flex-direction: column; gap: 10px; }
 
   .eyebrow { display: none; }
 
-  .pageTitle { font-size: 22px; }
+  .pageTitle { font-size: 20px; }
 
-  /* Stats: single scrollable row */
-  .stats {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-    flex-wrap: nowrap;
-  }
+  /* Stats: hide on mobile to save space */
+  .stats { display: none; }
 
-  .statValue { font-size: 15px; }
+  /* Role switch */
+  .roleBtn { padding: 9px 8px; font-size: 12px; }
 
-  /* Role switch: full width pills */
-  .roleSwitch { width: 100%; }
-  .roleBtn { flex: 1; text-align: center; padding: 9px 6px; font-size: 12px; }
+  /* Card body: smaller thumb */
+  .cardBody { padding: 14px; gap: 12px; }
 
-  /* Tabs: scrollable, no wrap */
-  .tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 4px;
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-  .tabs::-webkit-scrollbar { display: none; }
+  .thumb { width: 52px; height: 52px; border-radius: 8px; }
 
-  .tab {
-    flex-shrink: 0;
-    padding: 7px 14px;
-    border: 1px solid var(--border-1);
-    border-bottom: 1px solid var(--border-1);
-    border-radius: 20px;
-    font-size: 12px;
-    margin-bottom: 0;
-  }
+  .cardTitle { font-size: 14px; }
 
-  .tabActive {
-    background: var(--accent) !important;
-    color: #1c1a17 !important;
-    border-color: var(--accent) !important;
-    border-bottom-color: var(--accent) !important;
-  }
+  /* Footer */
+  .cardFoot { padding: 10px 14px; }
 
-  .tabCount { display: none; }
+  .cardAmount { font-size: 15px; }
 
-  /* Hide verbose escrow label on mobile */
-  .escrowBadgeMobile { display: none; }
-
-  /* ── Card: vertical stack layout ── */
-  .card { border-radius: 14px; }
-
-  .cardInner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    padding: 0;
-  }
-
-  /* Top section: thumb + title + badges */
-  .thumb {
-    display: none;
-  }
-
-  .info {
-    padding: 14px 14px 10px;
-    gap: 8px;
-  }
-
-  .infoTop {
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-
-  .cardTitle { font-size: 15px; white-space: normal; line-height: 1.3; }
-
-  .metaText { font-size: 12px; }
-
-  /* Bottom bar: amount + actions */
-  .cardRight {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    min-width: unset;
-    padding: 10px 14px 14px;
-    gap: 10px;
-    border-top: 1px solid var(--border-1);
-  }
-
-  .cardAmount { font-size: 16px; flex-shrink: 0; }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: flex-end;
-    flex: 1;
-  }
-
-  /* Make all action buttons consistent pill size on mobile */
-  .btnPay, .btnInvoice, .btnMsg, .btnReview, .btnCancel {
-    font-size: 12px;
-    padding: 7px 14px;
-    border-radius: 20px;
-    white-space: nowrap;
-  }
-
-  /* Cancel confirm */
-  .confirmBox {
-    align-items: flex-start;
-    width: 100%;
-    padding: 10px 14px 14px;
-    border-top: 1px solid var(--border-1);
-    gap: 10px;
-  }
-
-  .confirmText { font-size: 12px; }
-
-  .confirmBtns { gap: 6px; }
-
-  .btnConfirmYes, .btnConfirmNo {
-    font-size: 12px;
-    padding: 7px 14px;
-    border-radius: 20px;
-  }
-
-  /* Empty state */
-  .empty { padding: 48px 20px; }
+  /* Make primary action full-width if it's the only button */
+  .footActions { flex-wrap: nowrap; }
 }
