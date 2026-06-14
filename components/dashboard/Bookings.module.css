@@ -548,75 +548,152 @@
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-  .page { padding: 20px 12px; gap: 16px; }
+  /* Page */
+  .page { padding: 16px 12px; gap: 14px; }
 
-  .hero { padding: 18px 16px; gap: 16px; }
+  /* Hero: compact, vertical stack */
+  .hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 16px 14px;
+    gap: 14px;
+  }
 
-  .heroLeft { gap: 12px; }
+  .heroLeft { gap: 14px; }
+
+  .heroText { flex-direction: row; align-items: center; gap: 10px; }
+
+  .eyebrow { display: none; }
 
   .pageTitle { font-size: 22px; }
 
-  .stats { gap: 14px; }
+  /* Stats: single scrollable row */
+  .stats {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    flex-wrap: nowrap;
+  }
 
   .statValue { font-size: 15px; }
 
+  /* Role switch: full width pills */
   .roleSwitch { width: 100%; }
-  .roleBtn { flex: 1; text-align: center; padding: 8px 8px; font-size: 11px; }
+  .roleBtn { flex: 1; text-align: center; padding: 9px 6px; font-size: 12px; }
 
-  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .tab { flex-shrink: 0; padding: 10px 12px; }
+  /* Tabs: scrollable, no wrap */
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
 
-  /* Card: stack info row then actions row */
-  .cardInner {
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 12px 12px;
-    align-items: flex-start;
+  .tab {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border: 1px solid var(--border-1);
+    border-bottom: 1px solid var(--border-1);
+    border-radius: 20px;
+    font-size: 12px;
+    margin-bottom: 0;
   }
 
-  .thumb { width: 52px; height: 52px; flex-shrink: 0; }
+  .tabActive {
+    background: var(--accent) !important;
+    color: #1c1a17 !important;
+    border-color: var(--accent) !important;
+    border-bottom-color: var(--accent) !important;
+  }
 
-  .info { flex: 1; min-width: 0; }
+  .tabCount { display: none; }
 
-  .cardTitle { font-size: 14px; }
+  /* Hide verbose escrow label on mobile */
+  .escrowBadgeMobile { display: none; }
 
-  /* Right column drops below thumb+info as a full-width row */
+  /* ── Card: vertical stack layout ── */
+  .card { border-radius: 14px; }
+
+  .cardInner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+  }
+
+  /* Top section: thumb + title + badges */
+  .thumb {
+    display: none;
+  }
+
+  .info {
+    padding: 14px 14px 10px;
+    gap: 8px;
+  }
+
+  .infoTop {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .cardTitle { font-size: 15px; white-space: normal; line-height: 1.3; }
+
+  .metaText { font-size: 12px; }
+
+  /* Bottom bar: amount + actions */
   .cardRight {
     flex-direction: row;
     align-items: center;
-    width: 100%;
     justify-content: space-between;
-    padding: 0 0 4px 0;
     min-width: unset;
+    padding: 10px 14px 14px;
+    gap: 10px;
     border-top: 1px solid var(--border-1);
-    padding-top: 10px;
   }
 
-  .cardAmount { font-size: 15px; }
+  .cardAmount { font-size: 16px; flex-shrink: 0; }
 
   .actions {
+    display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
     justify-content: flex-end;
+    flex: 1;
   }
 
-  .confirmBox { align-items: flex-end; }
+  /* Make all action buttons consistent pill size on mobile */
+  .btnPay, .btnInvoice, .btnMsg, .btnReview, .btnCancel {
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
 
-  .confirmBtns { flex-wrap: wrap; justify-content: flex-end; }
-}
+  /* Cancel confirm */
+  .confirmBox {
+    align-items: flex-start;
+    width: 100%;
+    padding: 10px 14px 14px;
+    border-top: 1px solid var(--border-1);
+    gap: 10px;
+  }
 
-@media (max-width: 480px) {
-  .page { padding: 16px 10px; }
+  .confirmText { font-size: 12px; }
 
-  .hero { padding: 14px 14px; }
+  .confirmBtns { gap: 6px; }
 
-  .roleBtn { font-size: 10px; padding: 7px 6px; }
+  .btnConfirmYes, .btnConfirmNo {
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 20px;
+  }
 
-  .cardInner { padding: 10px 10px; }
-
-  .cardRight { flex-direction: column; align-items: flex-start; gap: 8px; }
-
-  .actions { justify-content: flex-start; }
-
-  .confirmBox { align-items: flex-start; }
+  /* Empty state */
+  .empty { padding: 48px 20px; }
 }

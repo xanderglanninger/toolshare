@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ToolShare',
   webDir: 'out',
   server: {
-    url: 'https://www.toolshare.co.za/login',
+    url: 'https://www.toolshare.co.za/dashboard',
     cleartext: false,
   },
   android: {
