@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import styles from "./Settings.module.css";
 import { useDashboard } from "@/app/dashboard/context";
 
@@ -15,6 +16,7 @@ const emptySlot = (): UploadSlot => ({ url: "", preview: "", uploading: false, e
 
 export default function Settings({ theme, onToggleTheme }: SettingsProps) {
   const { data: session, update: updateSession } = useSession();
+  const router = useRouter();
   const { idVerificationStatus, setIdVerificationStatus } = useDashboard();
 
   const [name,    setName]    = useState(session?.user?.name?.split(" ")[0]  ?? "");
@@ -369,7 +371,7 @@ export default function Settings({ theme, onToggleTheme }: SettingsProps) {
         <div className={styles.sectionBody}>
           <button
             className={styles.dangerBtn}
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={async () => { await signOut({ redirect: false }); router.push("/login"); }}
             type="button"
           >
             Sign out
