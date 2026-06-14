@@ -82,17 +82,10 @@ function ListingCard({ listing, onClick }: { listing: Listing; onClick: () => vo
         )}
       </div>
       <div className={styles.cardBody}>
-        <div className={styles.cardPriceGroup}>
-          <span className={styles.cardPrice}>
-            R {Number(listing.pricePerDay).toLocaleString("en-ZA")}
-            <span className={styles.cardPriceSub}>/day</span>
-          </span>
-          {listing.pricePerWeek && (
-            <span className={`${styles.cardWeekPrice} ${styles.hideOnMobile}`}>
-              R {Number(listing.pricePerWeek).toLocaleString("en-ZA")}/wk
-            </span>
-          )}
-        </div>
+        <span className={styles.cardPrice}>
+          R {Number(listing.pricePerDay).toLocaleString("en-ZA")}
+          <span className={styles.cardPriceSub}>/day</span>
+        </span>
         <p className={styles.cardTitle}>{listing.title}</p>
       </div>
     </div>
