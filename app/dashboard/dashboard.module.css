@@ -461,12 +461,14 @@
 }
 
 @media (max-width: 768px) {
+  .shell           { overflow-x: hidden; max-width: 100vw; }
   .sidebar         { display: none; }
-  .main            { margin-left: 0; padding-top: 100px; }
+  .main            { margin-left: 0; padding-top: 100px; overflow-x: hidden; max-width: 100vw; }
+  .content         { overflow-x: hidden; }
   .menuBtn         { display: none; }
   .mobileLogo      { display: none; }
   .topbar          { display: none; }
-  .mobileBottomNav { display: flex; }
+  .mobileBottomNav { display: flex; max-width: 100vw; }
   .createFab       { bottom: 20px; right: 20px; width: 48px; height: 48px; font-size: 24px; }
 }
 
