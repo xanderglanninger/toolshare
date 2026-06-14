@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
   Monitor, Wrench, Tent, Car, Shirt, Sofa, Music, BookOpen,
-  Gamepad2, Camera, PartyPopper, Package, MessageCircle, Flag,
+  Gamepad2, Camera, PartyPopper, Package, MessageCircle, Flag, ArrowLeft,
 } from "lucide-react";
 import styles from "./Messages.module.css";
 import type { MessageThread, Message, ReportReason, ThreadBookingInfo, BookingStatus } from "@/lib/types";
@@ -38,30 +38,22 @@ function relativeTime(date: Date | string | null): string {
 }
 
 const CATEGORY_ICONS: Record<string, React.ReactElement> = {
-  ELECTRONICS:          <Monitor size={22} />,
-  TOOLS_EQUIPMENT:      <Wrench size={22} />,
-  SPORTS_OUTDOORS:      <Tent size={22} />,
-  VEHICLES:             <Car size={22} />,
-  CLOTHING_ACCESSORIES: <Shirt size={22} />,
-  FURNITURE_HOME:       <Sofa size={22} />,
-  MUSICAL_INSTRUMENTS:  <Music size={22} />,
-  BOOKS_MEDIA:          <BookOpen size={22} />,
-  GAMES_TOYS:           <Gamepad2 size={22} />,
-  CAMERAS_PHOTOGRAPHY:  <Camera size={22} />,
-  PARTY_EVENTS:         <PartyPopper size={22} />,
-  OTHER:                <Package size={22} />,
-};
-
-const STATUS_LABELS: Record<BookingStatus, { label: string; color: string }> = {
-  PENDING:   { label: "Pending",   color: "var(--text-3)"  },
-  CONFIRMED: { label: "Confirmed", color: "#60a5fa"        },
-  ACTIVE:    { label: "Active",    color: "var(--accent)"  },
-  COMPLETED: { label: "Completed", color: "#22c55e"        },
-  CANCELLED: { label: "Cancelled", color: "#f87171"        },
+  ELECTRONICS:          <Monitor size={20} />,
+  TOOLS_EQUIPMENT:      <Wrench size={20} />,
+  SPORTS_OUTDOORS:      <Tent size={20} />,
+  VEHICLES:             <Car size={20} />,
+  CLOTHING_ACCESSORIES: <Shirt size={20} />,
+  FURNITURE_HOME:       <Sofa size={20} />,
+  MUSICAL_INSTRUMENTS:  <Music size={20} />,
+  BOOKS_MEDIA:          <BookOpen size={20} />,
+  GAMES_TOYS:           <Gamepad2 size={20} />,
+  CAMERAS_PHOTOGRAPHY:  <Camera size={20} />,
+  PARTY_EVENTS:         <PartyPopper size={20} />,
+  OTHER:                <Package size={20} />,
 };
 
 function fmtDate(d: Date | string) {
-  return new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
 }
 
 function fmtMoney(n: number) {
@@ -70,9 +62,7 @@ function fmtMoney(n: number) {
 
 function ItemCard({ info }: { info: ThreadBookingInfo }) {
   const thumb = info.listing.images?.[0];
-  const icon  = CATEGORY_ICONS[info.listing.category] ?? <Package size={22} />;
-  const status = STATUS_LABELS[info.status as BookingStatus] ?? STATUS_LABELS.PENDING;
-
+  const icon  = CATEGORY_ICONS[info.listing.category] ?? <Package size={20} />;
   return (
     <div className={styles.itemCard}>
       <div className={styles.itemCardThumb}>
@@ -82,32 +72,15 @@ function ItemCard({ info }: { info: ThreadBookingInfo }) {
       </div>
       <div className={styles.itemCardBody}>
         <p className={styles.itemCardTitle}>{info.listing.title}</p>
-        <p className={styles.itemCardLocation}>
-          {info.listing.city}, {info.listing.province}
+        <p className={styles.itemCardMeta}>
+          {fmtDate(info.startDate)} – {fmtDate(info.endDate)} · {fmtMoney(info.totalAmount)}
         </p>
-        <p className={styles.itemCardDates}>
-          {fmtDate(info.startDate)} → {fmtDate(info.endDate)}
-        </p>
-      </div>
-      <div className={styles.itemCardRight}>
-        <p className={styles.itemCardAmount}>{fmtMoney(info.totalAmount)}</p>
-        <span className={styles.itemCardStatus} style={{ color: status.color }}>
-          {status.label}
-        </span>
       </div>
     </div>
   );
 }
 
-// ─── Report Modal ─────────────────────────────────────────────────────────────
-
-interface ReportModalProps {
-  thread: MessageThread;
-  myId: string;
-  onClose: () => void;
-}
-
-function ReportModal({ thread, myId, onClose }: ReportModalProps) {
+function ReportModal({ thread, myId, onClose }: { thread: MessageThread; myId: string; onClose: () => void }) {
   const [reason, setReason]   = useState<ReportReason>("OTHER");
   const [details, setDetails] = useState("");
   const [sending, setSending] = useState(false);
@@ -141,32 +114,21 @@ function ReportModal({ thread, myId, onClose }: ReportModalProps) {
         {done ? (
           <>
             <p className={styles.modalTitle}>Report submitted</p>
-            <p className={styles.modalSub}>
-              Thanks for letting us know. Our team will review this shortly.
-            </p>
+            <p className={styles.modalSub}>Thanks for letting us know. Our team will review this shortly.</p>
             <button className={styles.modalClose} onClick={onClose}>Close</button>
           </>
         ) : (
           <>
             <p className={styles.modalTitle}>Report user</p>
             <p className={styles.modalSub}>
-              Reporting{" "}
-              <strong>
-                {otherParticipant?.user.name} {otherParticipant?.user.surname}
-              </strong>
+              Reporting <strong>{otherParticipant?.user.name} {otherParticipant?.user.surname}</strong>
             </p>
-
             <label className={styles.modalLabel}>Reason</label>
-            <select
-              className={styles.modalSelect}
-              value={reason}
-              onChange={(e) => setReason(e.target.value as ReportReason)}
-            >
+            <select className={styles.modalSelect} value={reason} onChange={(e) => setReason(e.target.value as ReportReason)}>
               {REPORT_REASONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
-
             <label className={styles.modalLabel}>Details (optional)</label>
             <textarea
               className={styles.modalTextarea}
@@ -175,14 +137,9 @@ function ReportModal({ thread, myId, onClose }: ReportModalProps) {
               onChange={(e) => setDetails(e.target.value)}
               rows={4}
             />
-
             <div className={styles.modalActions}>
               <button className={styles.modalCancel} onClick={onClose}>Cancel</button>
-              <button
-                className={styles.modalSubmit}
-                disabled={sending}
-                onClick={submit}
-              >
+              <button className={styles.modalSubmit} disabled={sending} onClick={submit}>
                 {sending ? "Submitting…" : "Submit report"}
               </button>
             </div>
@@ -193,8 +150,6 @@ function ReportModal({ thread, myId, onClose }: ReportModalProps) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 interface MessagesProps {
   initialThreadId?: string | null;
   onThreadOpened?: () => void;
@@ -204,20 +159,22 @@ export default function Messages({ initialThreadId, onThreadOpened }: MessagesPr
   const { data: session } = useSession();
   const myId = session?.user?.id ?? "";
 
-  const [threads, setThreads]         = useState<MessageThread[]>([]);
-  const [threadsLoading, setTL]       = useState(true);
-  const [selectedId, setSelectedId]   = useState<string | null>(initialThreadId ?? null);
-  const [messages, setMessages]       = useState<Message[]>([]);
-  const [msgsLoading, setML]          = useState(false);
-  const [reply, setReply]             = useState("");
-  const [sending, setSending]         = useState(false);
-  const [reporting, setReporting]     = useState(false);
-  const bottomRef                     = useRef<HTMLDivElement>(null);
+  const [threads, setThreads]       = useState<MessageThread[]>([]);
+  const [threadsLoading, setTL]     = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(initialThreadId ?? null);
+  const [messages, setMessages]     = useState<Message[]>([]);
+  const [msgsLoading, setML]        = useState(false);
+  const [reply, setReply]           = useState("");
+  const [sending, setSending]       = useState(false);
+  const [reporting, setReporting]   = useState(false);
+  // mobile: "list" shows the thread list, "chat" shows the open conversation
+  const [mobileView, setMobileView] = useState<"list" | "chat">(initialThreadId ? "chat" : "list");
+  const bottomRef                   = useRef<HTMLDivElement>(null);
 
-  // keep selectedId in sync if parent passes initialThreadId after mount
   useEffect(() => {
     if (initialThreadId) {
       setSelectedId(initialThreadId);
+      setMobileView("chat");
       onThreadOpened?.();
     }
   }, [initialThreadId, onThreadOpened]);
@@ -249,16 +206,23 @@ export default function Messages({ initialThreadId, onThreadOpened }: MessagesPr
   useEffect(() => {
     if (!selectedId) { setMessages([]); return; }
     fetchMessages(selectedId);
-    // mark thread as read in local state
     setThreads((prev) =>
       prev.map((t) => t.id === selectedId ? { ...t, unreadCount: 0 } : t)
     );
   }, [selectedId, fetchMessages]);
 
-  // scroll to bottom when messages load
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  function openThread(id: string) {
+    setSelectedId(id);
+    setMobileView("chat");
+  }
+
+  function backToList() {
+    setMobileView("list");
+  }
 
   async function handleSend() {
     if (!selectedId || !reply.trim()) return;
@@ -274,7 +238,6 @@ export default function Messages({ initialThreadId, onThreadOpened }: MessagesPr
       const json = await res.json();
       if (json.data) {
         setMessages((prev) => [...prev, json.data]);
-        // update thread preview
         setThreads((prev) =>
           prev.map((t) =>
             t.id === selectedId
@@ -289,29 +252,24 @@ export default function Messages({ initialThreadId, onThreadOpened }: MessagesPr
   }
 
   const activeThread = threads.find((t) => t.id === selectedId) ?? null;
+  const totalUnread  = threads.reduce((n, t) => n + t.unreadCount, 0);
 
   function otherParty(thread: MessageThread) {
-    const other = thread.participants.find((p) => p.userId !== myId);
-    return other?.user ?? null;
+    return thread.participants.find((p) => p.userId !== myId)?.user ?? null;
   }
-
-  const totalUnread = threads.reduce((n, t) => n + t.unreadCount, 0);
 
   return (
     <div className={styles.page}>
-      <div className={styles.pageHead}>
-        <p className={styles.eyebrow}>Inbox</p>
-        <h1 className={styles.pageTitle}>
-          Messages
-          {totalUnread > 0 && (
-            <span className={styles.headBadge}>{totalUnread}</span>
-          )}
-        </h1>
-      </div>
 
-      <div className={styles.layout}>
+      {/* ── Thread list panel ── */}
+      <div className={`${styles.listPanel}${mobileView === "chat" ? " " + styles.listPanelHidden : ""}`}>
+        <div className={styles.listHead}>
+          <h1 className={styles.listTitle}>
+            Messages
+            {totalUnread > 0 && <span className={styles.headBadge}>{totalUnread}</span>}
+          </h1>
+        </div>
 
-        {/* ── Thread list ── */}
         <div className={styles.list}>
           {threadsLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
@@ -319,169 +277,127 @@ export default function Messages({ initialThreadId, onThreadOpened }: MessagesPr
             ))
           ) : threads.length === 0 ? (
             <div className={styles.listEmpty}>
-              <p className={styles.listEmptyText}>No conversations yet.</p>
-              <p className={styles.listEmptySub}>
-                Click &quot;Message&quot; on any booking to start one.
-              </p>
+              <MessageCircle size={36} className={styles.listEmptyIcon} />
+              <p className={styles.listEmptyText}>No conversations yet</p>
+              <p className={styles.listEmptySub}>Click "Message" on any booking to start one.</p>
             </div>
           ) : (
             threads.map((t) => {
-              const other   = otherParty(t);
-              const isActive = t.id === selectedId;
+              const other = otherParty(t);
               return (
-                <div
+                <button
                   key={t.id}
-                  className={`${styles.item}${t.unreadCount > 0 ? " " + styles.itemUnread : ""}${isActive ? " " + styles.itemActive : ""}`}
-                  onClick={() => setSelectedId(t.id)}
+                  className={`${styles.item}${t.unreadCount > 0 ? " " + styles.itemUnread : ""}${t.id === selectedId ? " " + styles.itemActive : ""}`}
+                  onClick={() => openThread(t.id)}
                 >
                   <div className={styles.avatar}>
                     {other ? initials(other.name, other.surname) : "?"}
+                    {t.unreadCount > 0 && <span className={styles.avatarDot} />}
                   </div>
                   <div className={styles.itemBody}>
                     <div className={styles.itemHeader}>
                       <span className={styles.itemFrom}>
                         {other ? `${other.name} ${other.surname}` : "Unknown"}
                       </span>
-                      <span className={styles.itemTime}>
-                        {relativeTime(t.lastMessageAt)}
-                      </span>
+                      <span className={styles.itemTime}>{relativeTime(t.lastMessageAt)}</span>
                     </div>
-                    {t.subject && (
-                      <p className={styles.itemSubject}>{t.subject}</p>
-                    )}
-                    <p className={styles.itemPreview}>
+                    {t.subject && <p className={styles.itemSubject}>{t.subject}</p>}
+                    <p className={`${styles.itemPreview}${t.unreadCount > 0 ? " " + styles.itemPreviewBold : ""}`}>
                       {t.lastMessage?.body ?? "No messages yet"}
                     </p>
                   </div>
-                  {t.unreadCount > 0 && (
-                    <span className={styles.unreadDot} />
-                  )}
-                </div>
+                  <span className={styles.itemChevron}>›</span>
+                </button>
               );
             })
           )}
         </div>
-
-        {/* ── Thread / empty state ── */}
-        <div className={styles.thread}>
-          {!activeThread ? (
-            <div className={styles.threadEmpty}>
-              <span className={styles.threadEmptyIcon}><MessageCircle size={48} /></span>
-              <p className={styles.threadEmptyTitle}>Select a conversation</p>
-              <p className={styles.threadEmptySub}>
-                Choose a message from the left to read and reply
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Header */}
-              <div className={styles.threadHead}>
-                <div className={styles.avatarLg}>
-                  {(() => {
-                    const o = otherParty(activeThread);
-                    return o ? initials(o.name, o.surname) : "?";
-                  })()}
-                </div>
-                <div className={styles.threadHeadInfo}>
-                  {(() => {
-                    const o = otherParty(activeThread);
-                    return (
-                      <>
-                        <p className={styles.threadFrom}>
-                          {o ? `${o.name} ${o.surname}` : "Unknown"}
-                        </p>
-                        {activeThread.subject && (
-                          <p className={styles.threadSub}>{activeThread.subject}</p>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-                <button
-                  className={styles.reportBtn}
-                  onClick={() => setReporting(true)}
-                  title="Report this user"
-                >
-                  <Flag size={13} /> Report
-                </button>
-              </div>
-
-              {/* Item card */}
-              {activeThread.bookingInfo && (
-                <ItemCard info={activeThread.bookingInfo} />
-              )}
-
-              {/* Messages */}
-              <div className={styles.threadMessages}>
-                {msgsLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`${styles.skeletonBubble}${i % 2 === 1 ? " " + styles.skeletonBubbleRight : ""}`}
-                    />
-                  ))
-                ) : messages.length === 0 ? (
-                  <div className={styles.noMsgs}>
-                    No messages yet. Say hello!
-                  </div>
-                ) : (
-                  messages.map((m) => {
-                    const mine = m.senderId === myId;
-                    return (
-                      <div
-                        key={m.id}
-                        className={`${styles.bubbleWrap}${mine ? " " + styles.bubbleWrapMine : ""}`}
-                      >
-                        <div className={`${styles.bubble}${mine ? " " + styles.bubbleMine : ""}`}>
-                          {m.body}
-                        </div>
-                        <span className={styles.bubbleTime}>
-                          {relativeTime(m.createdAt)}
-                        </span>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={bottomRef} />
-              </div>
-
-              {/* Reply box */}
-              <div className={styles.replyBox}>
-                <input
-                  type="text"
-                  className={styles.replyInput}
-                  placeholder="Type a message…"
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  disabled={sending}
-                />
-                <button
-                  className={styles.sendBtn}
-                  disabled={!reply.trim() || sending}
-                  onClick={handleSend}
-                >
-                  {sending ? "…" : "Send"}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
       </div>
 
-      {/* ── Report modal ── */}
+      {/* ── Chat panel ── */}
+      <div className={`${styles.chatPanel}${mobileView === "list" ? " " + styles.chatPanelHidden : ""}`}>
+        {!activeThread ? (
+          <div className={styles.threadEmpty}>
+            <MessageCircle size={48} className={styles.threadEmptyIcon} />
+            <p className={styles.threadEmptyTitle}>Select a conversation</p>
+            <p className={styles.threadEmptySub}>Choose a message from the list to read and reply</p>
+          </div>
+        ) : (
+          <>
+            {/* Chat header */}
+            <div className={styles.chatHead}>
+              <button className={styles.backBtn} onClick={backToList} aria-label="Back">
+                <ArrowLeft size={20} />
+              </button>
+              <div className={styles.avatarLg}>
+                {(() => { const o = otherParty(activeThread); return o ? initials(o.name, o.surname) : "?"; })()}
+              </div>
+              <div className={styles.chatHeadInfo}>
+                {(() => {
+                  const o = otherParty(activeThread);
+                  return (
+                    <>
+                      <p className={styles.chatFrom}>{o ? `${o.name} ${o.surname}` : "Unknown"}</p>
+                      {activeThread.subject && <p className={styles.chatSub}>{activeThread.subject}</p>}
+                    </>
+                  );
+                })()}
+              </div>
+              <button className={styles.reportBtn} onClick={() => setReporting(true)} title="Report user">
+                <Flag size={14} />
+              </button>
+            </div>
+
+            {/* Booking context strip */}
+            {activeThread.bookingInfo && <ItemCard info={activeThread.bookingInfo} />}
+
+            {/* Messages */}
+            <div className={styles.threadMessages}>
+              {msgsLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className={`${styles.skeletonBubble}${i % 2 === 1 ? " " + styles.skeletonBubbleRight : ""}`} />
+                ))
+              ) : messages.length === 0 ? (
+                <p className={styles.noMsgs}>No messages yet. Say hello!</p>
+              ) : (
+                messages.map((m) => {
+                  const mine = m.senderId === myId;
+                  return (
+                    <div key={m.id} className={`${styles.bubbleWrap}${mine ? " " + styles.bubbleWrapMine : ""}`}>
+                      <div className={`${styles.bubble}${mine ? " " + styles.bubbleMine : ""}`}>
+                        {m.body}
+                      </div>
+                      <span className={styles.bubbleTime}>{relativeTime(m.createdAt)}</span>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Reply box */}
+            <div className={styles.replyBox}>
+              <input
+                type="text"
+                className={styles.replyInput}
+                placeholder="Type a message…"
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                }}
+                disabled={sending}
+              />
+              <button className={styles.sendBtn} disabled={!reply.trim() || sending} onClick={handleSend}>
+                {sending ? "…" : "Send"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
       {reporting && activeThread && (
-        <ReportModal
-          thread={activeThread}
-          myId={myId}
-          onClose={() => setReporting(false)}
-        />
+        <ReportModal thread={activeThread} myId={myId} onClose={() => setReporting(false)} />
       )}
     </div>
   );

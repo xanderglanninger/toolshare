@@ -1,44 +1,62 @@
-.page { padding: 36px 32px; }
+/* ─── Page ───────────────────────────────────────────────────────────────── */
 
-.pageHead { margin-bottom: 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-
-.eyebrow {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 4px;
-  width: 100%;
+.page {
+  display: flex;
+  height: calc(100vh - 56px); /* subtract topbar */
+  overflow: hidden;
+  gap: 0;
 }
 
-.pageTitle {
-  font-size: 28px; font-weight: 700; color: var(--text-1);
-  letter-spacing: -0.03em; line-height: 1;
-  display: flex; align-items: center; gap: 10px;
+/* ─── List panel ─────────────────────────────────────────────────────────── */
+
+.listPanel {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-1);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.listHead {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0;
+}
+
+.listTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
 }
 
 .headBadge {
-  font-size: 11px; font-weight: 700;
-  background: var(--accent); color: #1c1a17;
-  border-radius: 10px; padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #1c1a17;
+  border-radius: 10px;
+  padding: 2px 7px;
 }
 
-/* ─── Layout ── */
-.layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 16px;
-  height: calc(100vh - 200px);
-  min-height: 400px;
-}
-
-/* ─── List ── */
 .list {
-  background: var(--bg-card); border: 1px solid var(--border-1);
-  border-radius: 8px; overflow-y: auto;
-  display: flex; flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .skeletonItem {
-  height: 68px; margin: 8px 12px;
-  background: var(--bg-card-2); border-radius: 6px;
+  height: 64px;
+  margin: 8px 12px;
+  background: var(--bg-card-2);
+  border-radius: 8px;
   animation: shimmer 1.6s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -49,20 +67,37 @@
 }
 
 .listEmpty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 6px;
-  padding: 32px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--text-5);
 }
-.listEmptyText { font-size: 13px; font-weight: 600; color: var(--text-4); }
-.listEmptySub  { font-size: 11px; color: var(--text-5); text-align: center; }
+
+.listEmptyIcon { flex-shrink: 0; }
+.listEmptyText { font-size: 14px; font-weight: 600; color: var(--text-4); margin: 4px 0 0; }
+.listEmptySub  { font-size: 12px; color: var(--text-5); text-align: center; }
+
+/* ─── Thread list item ───────────────────────────────────────────────────── */
 
 .item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px; cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
   border-bottom: 1px solid var(--border-1);
   transition: background 0.15s;
-  position: relative;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
 }
+
 .item:last-child { border-bottom: none; }
 .item:hover { background: var(--bg-hover); }
 
@@ -74,183 +109,284 @@
 }
 
 .avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--bg-card-2); color: var(--accent);
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-card-2);
+  color: var(--accent);
   border: 1px solid var(--border-1);
-  font-size: 11px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatarDot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-card);
 }
 
 .itemBody { flex: 1; min-width: 0; }
 
 .itemHeader {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 2px;
 }
 
-.itemFrom    { font-size: 13px; font-weight: 600; color: var(--text-1); }
-.itemTime    { font-size: 10px; color: var(--text-5); flex-shrink: 0; }
+.itemFrom {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemTime {
+  font-size: 10px;
+  color: var(--text-5);
+  flex-shrink: 0;
+}
+
 .itemSubject {
-  font-size: 10px; color: var(--accent); font-weight: 600;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 1px;
 }
+
 .itemPreview {
-  font-size: 12px; color: var(--text-3);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-.unreadDot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent); flex-shrink: 0;
-}
-
-/* ─── Thread panel ── */
-.thread {
-  background: var(--bg-card); border: 1px solid var(--border-1);
-  border-radius: 8px; display: flex; flex-direction: column;
+  font-size: 12px;
+  color: var(--text-4);
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemPreviewBold {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.itemChevron {
+  font-size: 18px;
+  color: var(--text-5);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ─── Chat panel ─────────────────────────────────────────────────────────── */
+
+.chatPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-card);
 }
 
 .threadEmpty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-5);
 }
-.threadEmptyIcon  { font-size: 40px; color: inherit; }
-.threadEmptyTitle { font-size: 16px; font-weight: 600; color: var(--text-4); }
+
+.threadEmptyIcon  { color: var(--text-5); }
+.threadEmptyTitle { font-size: 15px; font-weight: 600; color: var(--text-4); }
 .threadEmptySub   { font-size: 12px; color: var(--text-5); text-align: center; }
 
-/* ─── Thread head ── */
-.threadHead {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px; border-bottom: 1px solid var(--border-1);
+/* ─── Chat header ────────────────────────────────────────────────────────── */
+
+.chatHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+
+.backBtn {
+  display: none; /* shown on mobile only */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-2);
+  padding: 4px;
+  border-radius: 6px;
+  line-height: 0;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.backBtn:hover { color: var(--accent); }
+
+.avatarLg {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-card-2);
+  color: var(--accent);
+  border: 1px solid var(--border-1);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.avatarLg {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: var(--bg-card-2); color: var(--accent);
-  border: 1px solid var(--border-1);
-  font-size: 12px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+.chatHeadInfo { flex: 1; min-width: 0; }
+
+.chatFrom {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
 
-.threadHeadInfo { flex: 1; min-width: 0; }
-.threadFrom { font-size: 14px; font-weight: 600; color: var(--text-1); }
-.threadSub  {
-  font-size: 10px; color: var(--accent); font-weight: 600;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.chatSub {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
 
 .reportBtn {
-  font-size: 11px; font-weight: 600; color: var(--text-4);
-  border: 1px solid var(--border-1); background: transparent;
-  border-radius: 6px; padding: 5px 10px; cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: border-color 0.15s, color 0.15s;
+  background: transparent;
+  border: 1px solid var(--border-1);
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--text-4);
+  line-height: 0;
   flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
 }
 .reportBtn:hover { border-color: #f87171; color: #f87171; }
 
-/* ─── Item card ── */
+/* ─── Booking context strip ──────────────────────────────────────────────── */
+
 .itemCard {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 18px;
+  padding: 10px 18px;
   background: var(--bg-card-2);
   border-bottom: 1px solid var(--border-1);
   flex-shrink: 0;
 }
 
 .itemCardThumb {
-  width: 48px; height: 48px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
   overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border-1);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.itemCardImg {
-  width: 100%; height: 100%;
-  object-fit: cover;
-}
+.itemCardImg { width: 100%; height: 100%; object-fit: cover; }
+.itemCardIcon { color: var(--text-5); }
 
-.itemCardIcon { font-size: 22px; color: inherit; }
-
-.itemCardBody {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+.itemCardBody { flex: 1; min-width: 0; }
 
 .itemCardTitle {
-  font-size: 13px; font-weight: 600; color: var(--text-1);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 0 2px;
 }
 
-.itemCardLocation {
-  font-size: 11px; color: var(--text-4);
+.itemCardMeta {
+  font-size: 11px;
+  color: var(--text-4);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.itemCardDates {
-  font-size: 11px; color: var(--text-5);
-}
+/* ─── Messages area ──────────────────────────────────────────────────────── */
 
-.itemCardRight {
+.threadMessages {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  flex-shrink: 0;
-}
-
-.itemCardAmount {
-  font-size: 13px; font-weight: 700; color: var(--text-1);
-  white-space: nowrap;
-}
-
-.itemCardStatus {
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 0.07em; text-transform: uppercase;
-}
-
-/* ─── Messages area ── */
-.threadMessages {
-  flex: 1; padding: 18px 20px; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 8px;
+  gap: 8px;
 }
 
 .noMsgs {
   margin: auto;
-  font-size: 13px; color: var(--text-5);
+  font-size: 13px;
+  color: var(--text-5);
 }
 
 .skeletonBubble {
-  height: 36px; width: 55%;
-  background: var(--bg-card-2); border-radius: 8px;
+  height: 36px;
+  width: 55%;
+  background: var(--bg-card-2);
+  border-radius: 8px;
   animation: shimmer 1.6s ease-in-out infinite;
   align-self: flex-start;
 }
 .skeletonBubbleRight { align-self: flex-end; }
 
 .bubbleWrap {
-  display: flex; flex-direction: column; gap: 2px;
-  align-items: flex-start; max-width: 78%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  max-width: 78%;
 }
 .bubbleWrapMine { align-self: flex-end; align-items: flex-end; }
 
 .bubble {
-  background: var(--bg-card-2); border: 1px solid var(--border-1);
+  background: var(--bg-card-2);
+  border: 1px solid var(--border-1);
   border-radius: 8px 8px 8px 2px;
   padding: 9px 14px;
-  font-size: 13px; color: var(--text-2); line-height: 1.5;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
 }
 
 .bubbleMine {
@@ -261,42 +397,64 @@
 }
 
 .bubbleTime {
-  font-size: 9px; color: var(--text-5);
+  font-size: 9px;
+  color: var(--text-5);
   padding: 0 4px;
 }
 
-/* ─── Reply box ── */
+/* ─── Reply box ──────────────────────────────────────────────────────────── */
+
 .replyBox {
-  display: flex; gap: 8px;
-  padding: 12px 16px; border-top: 1px solid var(--border-1);
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-1);
   flex-shrink: 0;
+  background: var(--bg-card);
 }
 
 .replyInput {
-  flex: 1; background: var(--bg-card-2);
-  border: 1.5px solid var(--border-1); border-radius: 6px;
-  padding: 9px 14px;
-  font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-1);
-  outline: none; transition: border-color 0.15s;
+  flex: 1;
+  background: var(--bg-card-2);
+  border: 1.5px solid var(--border-1);
+  border-radius: 22px;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 0.15s;
 }
 .replyInput::placeholder { color: var(--text-5); }
 .replyInput:focus { border-color: var(--accent); }
 .replyInput:disabled { opacity: 0.5; }
 
 .sendBtn {
-  background: var(--accent); color: #1c1a17; border: none;
-  border-radius: 6px; padding: 9px 18px;
-  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  background: var(--accent);
+  color: #1c1a17;
+  border: none;
+  border-radius: 22px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .sendBtn:hover:not(:disabled) { background: var(--accent-hover, #e69b00); }
 .sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ─── Report Modal ── */
+/* ─── Report Modal ───────────────────────────────────────────────────────── */
+
 .modalBackdrop {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background: rgba(0,0,0,0.55);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
   padding: 20px;
 }
@@ -306,23 +464,18 @@
   border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 28px 28px 24px;
-  width: 100%; max-width: 420px;
-  display: flex; flex-direction: column; gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.modalTitle {
-  font-size: 16px; font-weight: 700; color: var(--text-1);
-  letter-spacing: -0.02em;
-}
-
-.modalSub {
-  font-size: 12px; color: var(--text-4); margin-top: -4px;
-}
-
+.modalTitle { font-size: 16px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; margin: 0; }
+.modalSub   { font-size: 12px; color: var(--text-4); margin: -4px 0 0; }
 .modalLabel {
   font-size: 11px; font-weight: 600; color: var(--text-3);
-  letter-spacing: 0.06em; text-transform: uppercase;
-  margin-bottom: -6px;
+  letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: -6px;
 }
 
 .modalSelect {
@@ -331,8 +484,11 @@
   border: 1.5px solid var(--border-1);
   border-radius: 6px;
   padding: 9px 12px;
-  font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-1);
-  outline: none; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-1);
+  outline: none;
+  cursor: pointer;
   transition: border-color 0.15s;
 }
 .modalSelect:focus { border-color: var(--accent); }
@@ -343,17 +499,19 @@
   border: 1.5px solid var(--border-1);
   border-radius: 6px;
   padding: 9px 12px;
-  font-family: 'Inter', sans-serif; font-size: 13px; color: var(--text-1);
-  outline: none; resize: vertical; min-height: 80px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-1);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
   transition: border-color 0.15s;
   box-sizing: border-box;
 }
 .modalTextarea::placeholder { color: var(--text-5); }
 .modalTextarea:focus { border-color: var(--accent); }
 
-.modalActions {
-  display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;
-}
+.modalActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 
 .modalCancel {
   font-size: 12px; font-weight: 600; color: var(--text-4);
@@ -385,12 +543,69 @@
 .modalSubmit:hover:not(:disabled) { background: rgba(239,68,68,0.25); }
 .modalSubmit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ─── Responsive ── */
-@media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; height: auto; }
-  .thread { min-height: 420px; }
-}
+/* ─── Mobile ─────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-  .page { padding: 24px 16px; }
+  .page {
+    flex-direction: column;
+    height: calc(100vh - 100px); /* subtract mobile top nav */
+    position: relative;
+  }
+
+  /* List panel: full screen on mobile */
+  .listPanel {
+    width: 100%;
+    flex: 1;
+    border-right: none;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s;
+  }
+
+  /* Hide list when chat is open */
+  .listPanelHidden {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Chat panel: full screen on mobile, slides in from right */
+  .chatPanel {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s;
+    pointer-events: none;
+  }
+
+  /* Show chat when active */
+  .chatPanel:not(.chatPanelHidden) {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Show back button on mobile */
+  .backBtn { display: flex; }
+
+  /* Compact list head */
+  .listHead { padding: 16px 16px 12px; }
+  .listTitle { font-size: 18px; }
+
+  /* Bigger touch targets for list items */
+  .item { padding: 14px 16px; }
+
+  /* Chat header */
+  .chatHead { padding: 12px 14px; }
+
+  /* Messages */
+  .threadMessages { padding: 12px 14px; }
+
+  /* Reply box */
+  .replyBox { padding: 10px 12px; }
+
+  .replyInput { font-size: 16px; } /* prevent iOS zoom on focus */
 }
