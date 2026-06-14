@@ -88,7 +88,7 @@ function ListingCard({ listing, onClick }: { listing: Listing; onClick: () => vo
             <span className={styles.cardPriceSub}>/day</span>
           </span>
           {listing.pricePerWeek && (
-            <span className={styles.cardWeekPrice}>
+            <span className={`${styles.cardWeekPrice} ${styles.hideOnMobile}`}>
               R {Number(listing.pricePerWeek).toLocaleString("en-ZA")}/wk
             </span>
           )}
@@ -292,7 +292,7 @@ export default function TodaysPicks() {
 
   return (
     <div className={styles.page}>
-      {/* Header row: title + search + filter */}
+      {/* ── Desktop header ── */}
       <div className={styles.pageHead}>
         <div>
           <p className={styles.pageSub}>Browse</p>
@@ -333,41 +333,40 @@ export default function TodaysPicks() {
               </button>
             )}
           </div>
-          {/* Filter — icon-only, expands on click */}
+          {/* Filter dropdown */}
           <div className={styles.filterWrap} ref={filterRef}>
-        <button
-          className={`${styles.filterBtn} ${activeCategory ? styles.filterBtnActive : ""} ${filterOpen ? styles.filterBtnOpen : ""}`}
-          onClick={() => setFilterOpen((o) => !o)}
-          aria-label="Filter by category"
-        >
-          <SlidersHorizontal size={14} />
-          <span className={`${styles.filterLabel} ${filterOpen || activeCategory ? styles.filterLabelVisible : ""}`}>
-            {activeCategory ? CATEGORY_LABELS[activeCategory] : "Filter"}
-          </span>
-          <span className={`${styles.filterChevron} ${filterOpen || activeCategory ? styles.filterChevronVisible : ""}`}>
-            {filterOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-          </span>
-        </button>
-        {filterOpen && (
-          <div className={styles.filterDropdown}>
             <button
-              className={`${styles.filterOption} ${activeCategory === null ? styles.filterOptionActive : ""}`}
-              onClick={() => { setActiveCategory(null); setFilterOpen(false); }}
+              className={`${styles.filterBtn} ${activeCategory ? styles.filterBtnActive : ""} ${filterOpen ? styles.filterBtnOpen : ""}`}
+              onClick={() => setFilterOpen((o) => !o)}
+              aria-label="Filter by category"
             >
-              All categories
+              <SlidersHorizontal size={14} />
+              <span className={`${styles.filterLabel} ${filterOpen || activeCategory ? styles.filterLabelVisible : ""}`}>
+                {activeCategory ? CATEGORY_LABELS[activeCategory] : "Filter"}
+              </span>
+              <span className={`${styles.filterChevron} ${filterOpen || activeCategory ? styles.filterChevronVisible : ""}`}>
+                {filterOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              </span>
             </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                className={`${styles.filterOption} ${activeCategory === cat ? styles.filterOptionActive : ""}`}
-                onClick={() => { setActiveCategory(cat); setFilterOpen(false); }}
-              >
-                {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
-              </button>
-            ))}
-
-          </div>
-        )}
+            {filterOpen && (
+              <div className={styles.filterDropdown}>
+                <button
+                  className={`${styles.filterOption} ${activeCategory === null ? styles.filterOptionActive : ""}`}
+                  onClick={() => { setActiveCategory(null); setFilterOpen(false); }}
+                >
+                  All categories
+                </button>
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    className={`${styles.filterOption} ${activeCategory === cat ? styles.filterOptionActive : ""}`}
+                    onClick={() => { setActiveCategory(cat); setFilterOpen(false); }}
+                  >
+                    {CATEGORY_ICONS[cat]} {CATEGORY_LABELS[cat]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <Link href="/dashboard/create" className={styles.createBtn}>
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
@@ -375,6 +374,42 @@ export default function TodaysPicks() {
             </svg>
             Create listing
           </Link>
+        </div>
+      </div>
+
+      {/* ── Mobile search + category chips ── */}
+      <div className={styles.mobileBar}>
+        <div className={styles.mobileSearchRow}>
+          <div className={styles.mobileSearchWrap}>
+            <Search size={15} className={styles.mobileSearchIcon} />
+            <input
+              className={styles.mobileSearchInput}
+              type="text"
+              placeholder="Search listings…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            {searchInput && (
+              <button className={styles.mobileSearchClear} onClick={() => setSearchInput("")}>✕</button>
+            )}
+          </div>
+        </div>
+        <div className={styles.categoryChips}>
+          <button
+            className={`${styles.chip} ${activeCategory === null ? styles.chipActive : ""}`}
+            onClick={() => setActiveCategory(null)}
+          >
+            All
+          </button>
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              className={`${styles.chip} ${activeCategory === cat ? styles.chipActive : ""}`}
+              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+            >
+              {CATEGORY_LABELS[cat]}
+            </button>
+          ))}
         </div>
       </div>
 

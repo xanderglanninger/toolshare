@@ -565,15 +565,135 @@
 .emptyTitle { font-size: 20px; font-weight: 700; color: var(--text-2); }
 .emptySub   { font-size: 14px; color: var(--text-4); }
 
-/* ─── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .page         { padding: 24px 16px; gap: 16px; }
-  .grid         { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
-  .pageTitle    { font-size: 22px; }
-  .headControls { flex-wrap: wrap; }
-  .searchOpen   { width: 200px; }
+/* ─── Mobile bar (search + chips) — hidden on desktop ───────────────────── */
+.mobileBar {
+  display: none;
 }
 
-@media (max-width: 480px) {
-  .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+.hideOnMobile {
+  /* used inline on elements to hide on mobile */
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page      { padding: 16px 0 24px; gap: 0; }
+  .pageHead  { display: none; }
+
+  /* Cards: less rounded, bigger images */
+  .card          { border-radius: 8px; }
+  .cardSkeleton  { border-radius: 8px; }
+  .cardImg       { aspect-ratio: 4 / 3; }
+
+  .hideOnMobile  { display: none !important; }
+
+  /* Mobile bar */
+  .mobileBar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--bg-base);
+    padding: 12px 14px 0;
+    border-bottom: 1px solid var(--border-1);
+  }
+
+  /* Search row */
+  .mobileSearchRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mobileSearchWrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-1);
+    border-radius: 10px;
+    padding: 0 12px;
+    height: 42px;
+    gap: 8px;
+    transition: border-color 0.15s;
+  }
+
+  .mobileSearchWrap:focus-within {
+    border-color: var(--accent);
+  }
+
+  .mobileSearchIcon {
+    flex-shrink: 0;
+    color: var(--text-4);
+  }
+
+  .mobileSearchInput {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-1);
+  }
+
+  .mobileSearchInput::placeholder { color: var(--text-5); }
+
+  .mobileSearchClear {
+    background: none;
+    border: none;
+    color: var(--text-4);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+
+  /* Category chips */
+  .categoryChips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 12px;
+  }
+
+  .categoryChips::-webkit-scrollbar { display: none; }
+
+  .chip {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-1);
+    background: var(--bg-card);
+    color: var(--text-3);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .chip:hover { border-color: var(--border-3); color: var(--text-1); }
+
+  .chipActive {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #1c1a17 !important;
+    font-weight: 600;
+  }
+
+  /* Grid */
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 14px 14px 0;
+  }
+
+  .cardBody { padding: 10px 12px 12px; }
+  .cardPrice { font-size: 17px; }
+  .cardTitle { font-size: 12px; }
 }
