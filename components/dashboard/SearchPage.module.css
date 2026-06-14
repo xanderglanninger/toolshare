@@ -161,7 +161,7 @@
 .card:active { border-color: var(--accent); }
 
 .cardImg {
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 2 / 3;
   background: var(--bg-card-2);
   overflow: hidden;
   display: flex;

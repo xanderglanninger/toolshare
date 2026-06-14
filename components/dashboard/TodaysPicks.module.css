@@ -305,7 +305,7 @@
 /* ─── Card image area ────────────────────────────────────────────────────── */
 .cardImg {
   position: relative;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 2 / 3;
   background: var(--bg-card-2);
   overflow: hidden;
   flex-shrink: 0;
