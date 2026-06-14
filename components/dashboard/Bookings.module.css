@@ -356,8 +356,8 @@
   border-radius: 3px;
 }
 
-.typeOut { background: var(--accent-soft); color: var(--accent); }
-.typeIn  { background: rgba(34,197,94,0.1); color: #22c55e; }
+.typeOut { background: var(--accent-soft);  color: var(--accent); }
+.typeIn  { background: var(--bg-card-2);    color: var(--text-3); border: 1px solid var(--border-1); }
 
 .cardTitle {
   font-size: 15px;
@@ -431,11 +431,11 @@
   flex-shrink: 0;
 }
 
-.badgePending   { background: var(--bg-card-2);              color: var(--text-3); }
-.badgeConfirmed { background: rgba(59,130,246,0.15);          color: #60a5fa; }
-.badgeActive    { background: var(--accent-soft);             color: var(--accent); }
-.badgeDone      { background: rgba(34,197,94,0.12);           color: #22c55e; }
-.badgeCancelled { background: rgba(239,68,68,0.12);           color: #f87171; }
+.badgePending   { background: var(--bg-card-2);   color: var(--text-4); }
+.badgeConfirmed { background: var(--bg-card-2);   color: var(--text-2); border: 1px solid var(--border-2); }
+.badgeActive    { background: var(--accent-soft); color: var(--accent); }
+.badgeDone      { background: var(--bg-card-2);   color: var(--text-4); }
+.badgeCancelled { background: var(--bg-card-2);   color: var(--text-4); text-decoration: line-through; }
 
 /* ─── Card footer: amount + actions ─────────────────────────────────────── */
 
